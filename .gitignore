@@ -33,3 +33,6 @@
 *.idb
 *.sdf
 *.ilk
+
+# Specific directories
+tmp
