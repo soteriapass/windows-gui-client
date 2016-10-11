@@ -23,6 +23,7 @@ keymgmt::keymgmt()
 
 keymgmt::~keymgmt()
 {
+	unlock_key();
 	memset(m_pszPrivateKey, 0, 4096);
 	VirtualUnlock(m_pszPrivateKey, 4096);
 
