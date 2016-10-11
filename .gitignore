@@ -36,3 +36,4 @@
 
 # Specific directories
 tmp
+*.opendb
