@@ -33,6 +33,8 @@
 *.idb
 *.sdf
 *.ilk
+pswmgr
+pswmgrd
 
 # Specific directories
 tmp
