@@ -17,6 +17,15 @@ grpc::Status PasswordManagerServerImpl::Authenticate(grpc::ServerContext* contex
     return grpc::Status::OK;
 }
 
+PasswordManagerServerImpl* PasswordManagerServerImpl::Instance()
+{
+    if(ms_Instance == nullptr)
+    {
+        ms_Instance = new PasswordManagerServerImpl();
+    }
+    return ms_Instance;
+}
+
 bool PasswordManagerServerImpl::Run()
 {
     if(m_IsRunning)

@@ -2,5 +2,5 @@
 
 int main()
 {
-    return 0;
+    return PasswordManagerServerImpl::Instance()->Run() ? 0 : 1;
 }

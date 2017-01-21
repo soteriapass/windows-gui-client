@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package pswmgr;
+
+service PasswordManagerServer {
+    rpc Authenticate (AuthenticationRequest) returns (AuthenticationReply) {}
+}
+
+message AuthenticationRequest {
+    string username = 1;
+    string password = 2; 
+}
+
+message AuthenticationReply {
+    bool sucess = 1;
+}
