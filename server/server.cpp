@@ -127,21 +127,18 @@ bool PasswordManagerServer::Run(conf& conf_file)
     {
         std::ifstream file(conf_file.get_server_certificate_file(), std::ifstream::in);
         cert = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-        std::cout << "Got Cert" << std::endl;
     }
 
     if(!conf_file.get_server_key_file().empty())
     {
         std::ifstream file(conf_file.get_server_key_file(), std::ifstream::in);
         key = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-        std::cout << "Got Key" << std::endl;
     }
 
     if(!conf_file.get_server_ca_file().empty())
     {
         std::ifstream file(conf_file.get_server_ca_file(), std::ifstream::in);
         ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-        std::cout << "Got CA" << std::endl;
     }
 
     std::unique_ptr<grpc::Server> passwordServer;

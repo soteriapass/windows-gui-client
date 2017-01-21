@@ -3,7 +3,7 @@
 
 int main()
 {
-    conf conf_file("pswmgr.conf");
+    conf conf_file("pswmgrd.conf");
     if(!PasswordManagerServer::Instance()->Init(conf_file))
         return -1;
 
