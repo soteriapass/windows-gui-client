@@ -3,6 +3,8 @@
 #include <thread>
 #include <string>
 #include <sstream>
+#include <iostream>
+#include <fstream>
 
 // Static Member Initialization
 PasswordManagerServer* PasswordManagerServer::ms_Instance = nullptr;
@@ -118,12 +120,38 @@ bool PasswordManagerServer::Run(conf& conf_file)
         return false;
     }
 
+    std::string cert;
+    std::string key;
+    std::string ca;
+    if(!conf_file.get_server_certificate_file().empty())
+    {
+        std::ifstream file(conf_file.get_server_certificate_file(), std::ifstream::in);
+        cert = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+        std::cout << "Got Cert" << std::endl;
+    }
+
+    if(!conf_file.get_server_key_file().empty())
+    {
+        std::ifstream file(conf_file.get_server_key_file(), std::ifstream::in);
+        key = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+        std::cout << "Got Key" << std::endl;
+    }
+
+    if(!conf_file.get_server_ca_file().empty())
+    {
+        std::ifstream file(conf_file.get_server_ca_file(), std::ifstream::in);
+        ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+        std::cout << "Got CA" << std::endl;
+    }
+
     std::unique_ptr<grpc::Server> passwordServer;
     {
         const std::string server_address(conf_file.get_password_manager_address_and_port());
         grpc::ServerBuilder builder;
 
         auto credOptions = grpc::SslServerCredentialsOptions();
+        credOptions.pem_root_certs = ca;
+        credOptions.pem_key_cert_pairs.push_back({ key, cert });
         auto channelCreds = grpc::SslServerCredentials(credOptions);
 
         builder.AddListeningPort(server_address, channelCreds);
@@ -139,6 +167,8 @@ bool PasswordManagerServer::Run(conf& conf_file)
         grpc::ServerBuilder builder;
 
         auto credOptions = grpc::SslServerCredentialsOptions();
+        credOptions.pem_root_certs = ca;
+        credOptions.pem_key_cert_pairs.push_back({ key, cert });
         auto channelCreds = grpc::SslServerCredentials(credOptions);
 
         builder.AddListeningPort(server_address, channelCreds);

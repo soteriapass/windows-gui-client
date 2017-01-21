@@ -1,5 +1,7 @@
 #include <vector>
 #include <string>
+#include <iostream>
+#include <fstream>
 
 #include <grpc++/grpc++.h>
 #include "client.h"
@@ -13,7 +15,10 @@ enum CMD_ACTIONS
 
 auto get_channel(const std::string& address)
 {
+    std::ifstream file("/home/mfilion/programming/pswmgr/easy-rsa/keys/ca.crt", std::ifstream::in);
+    std::string ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     auto credOptions = grpc::SslCredentialsOptions();
+    credOptions.pem_root_certs = ca;
     auto sslCreds = grpc::SslCredentials(credOptions);
     auto channel = grpc::CreateChannel(address, sslCreds);
     return channel;
@@ -123,6 +128,7 @@ int main(int argc, char** argv)
                 {
                     return 2;
                 }
+                std::cout << "Authenticated" << std::endl;
             }
             case ACTION_HELP:
             {
