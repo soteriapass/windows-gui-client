@@ -2,5 +2,11 @@
 
 int main()
 {
-    return PasswordManagerServerImpl::Instance()->Run() ? 0 : 1;
+    if(!PasswordManagerServer::Instance()->Init())
+        return -1;
+
+    if(!PasswordManagerServer::Instance()->Run())
+        return -2;
+
+    return 0;
 }

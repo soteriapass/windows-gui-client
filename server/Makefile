@@ -30,7 +30,7 @@
 #
 
 CXX = g++
-CPPFLAGS += -I/usr/local/include -pthread
+CPPFLAGS += -I/usr/local/include -pthread -I../third_party/sqlite
 CXXFLAGS += -std=c++11
 LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
            -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed \
@@ -45,7 +45,7 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check pswmgrd
 
-pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o pswmgr_server.o main.o
+pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o pswmgr_server.o main.o sqlite3.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 %.grpc.pb.cc: %.proto

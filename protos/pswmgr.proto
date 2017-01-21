@@ -2,8 +2,13 @@ syntax = "proto3";
 
 package pswmgr;
 
-service PasswordManagerServer {
-    rpc Authenticate (AuthenticationRequest) returns (AuthenticationReply) {}
+service PasswordManager {
+    rpc Authenticate (AuthenticationRequest) returns (SimpleReply) {}
+}
+
+service UserManagement {
+    rpc Authenticate (AuthenticationRequest) returns (SimpleReply) {}
+    rpc CreateUser (UserCreationRequest) returns (SimpleReply) {}
 }
 
 message AuthenticationRequest {
@@ -11,6 +16,12 @@ message AuthenticationRequest {
     string password = 2; 
 }
 
-message AuthenticationReply {
+message UserCreationRequest {
+    string username = 1;
+    string password = 2;
+    bool admin = 3;
+}
+
+message SimpleReply {
     bool sucess = 1;
 }
