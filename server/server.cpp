@@ -81,7 +81,7 @@ PasswordManagerServer* PasswordManagerServer::Instance()
     return ms_Instance;
 }
 
-bool PasswordManagerServer::Init()
+bool PasswordManagerServer::Init(conf& conf_file)
 {
     if(m_Database != nullptr)
         return false;
@@ -104,7 +104,7 @@ bool PasswordManagerServer::Init()
     return true;
 } 
 
-bool PasswordManagerServer::Run()
+bool PasswordManagerServer::Run(conf& conf_file)
 {
     if(m_Database == nullptr)
     {
@@ -120,10 +120,13 @@ bool PasswordManagerServer::Run()
 
     std::unique_ptr<grpc::Server> passwordServer;
     {
-        const std::string server_address("0.0.0.0:5050");
+        const std::string server_address(conf_file.get_password_manager_address_and_port());
         grpc::ServerBuilder builder;
 
-        builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+        auto credOptions = grpc::SslServerCredentialsOptions();
+        auto channelCreds = grpc::SslServerCredentials(credOptions);
+
+        builder.AddListeningPort(server_address, channelCreds);
         builder.RegisterService(static_cast<pswmgr::PasswordManager::Service*>(this));
 
         passwordServer = builder.BuildAndStart();
@@ -132,10 +135,13 @@ bool PasswordManagerServer::Run()
     
     std::unique_ptr<grpc::Server> userMgmtServer;
     {
-        const std::string server_address("127.0.0.1:6060");
+        const std::string server_address(conf_file.get_user_mangement_address_and_port());
         grpc::ServerBuilder builder;
 
-        builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
+        auto credOptions = grpc::SslServerCredentialsOptions();
+        auto channelCreds = grpc::SslServerCredentials(credOptions);
+
+        builder.AddListeningPort(server_address, channelCreds);
         builder.RegisterService(static_cast<pswmgr::UserManagement::Service*>(this));
 
         userMgmtServer = builder.BuildAndStart();

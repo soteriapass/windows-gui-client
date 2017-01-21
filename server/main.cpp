@@ -1,11 +1,13 @@
 #include "pswmgr_server.h"
+#include "conf.h"
 
 int main()
 {
-    if(!PasswordManagerServer::Instance()->Init())
+    conf conf_file("pswmgr.conf");
+    if(!PasswordManagerServer::Instance()->Init(conf_file))
         return -1;
 
-    if(!PasswordManagerServer::Instance()->Run())
+    if(!PasswordManagerServer::Instance()->Run(conf_file))
         return -2;
 
     return 0;

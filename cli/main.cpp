@@ -11,9 +11,17 @@ enum CMD_ACTIONS
     ACTION_HELP,
 };
 
+auto get_channel(const std::string& address)
+{
+    auto credOptions = grpc::SslCredentialsOptions();
+    auto sslCreds = grpc::SslCredentials(credOptions);
+    auto channel = grpc::CreateChannel(address, sslCreds);
+    return channel;
+}
+
 bool add_user(const std::string& user, const std::string& pass, const std::string& new_user, const std::string& new_pass)
 {
-    PasswordManagerClient client( grpc::CreateChannel("localhost:6060", grpc::InsecureChannelCredentials()) );
+    PasswordManagerClient client( get_channel("localhost:6060") );
     if(!client.Authenticate(user, pass, true))
     {
         std::cerr << client.GetLastError() << std::endl;
@@ -30,7 +38,7 @@ bool add_user(const std::string& user, const std::string& pass, const std::strin
 
 bool login(const std::string& user, const std::string& pass)
 {
-    PasswordManagerClient client( grpc::CreateChannel("localhost:5050", grpc::InsecureChannelCredentials()) );
+    PasswordManagerClient client( get_channel("localhost:5050") );
     if(!client.Authenticate(user, pass, false))
     {
         std::cerr << client.GetLastError() << std::endl;

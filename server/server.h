@@ -9,12 +9,14 @@
 
 #include "pswmgr.grpc.pb.h"
 
+#include "conf.h"
+
 class PasswordManagerServer final : public pswmgr::PasswordManager::Service, public pswmgr::UserManagement::Service
 {
 public:
     static PasswordManagerServer* Instance();
-    bool Init();
-    bool Run();
+    bool Init(conf& conf_file);
+    bool Run(conf& conf_file);
 
 protected:
     PasswordManagerServer();

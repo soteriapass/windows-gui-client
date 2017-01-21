@@ -37,3 +37,13 @@
 # Specific directories
 tmp
 *.opendb
+
+# Protocol Buffer and gRpc files
+*.grpc.*
+*.pb.*
+
+# Database files
+*.db
+
+# Linux files
+*.swp
