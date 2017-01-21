@@ -2,7 +2,7 @@
 #include <string>
 
 #include <grpc++/grpc++.h>
-#include "pswmgr_client.h"
+#include "client.h"
 
 enum CMD_ACTIONS
 {

@@ -1,4 +1,4 @@
-#include "pswmgr_client.h"
+#include "client.h"
 
 PasswordManagerClient::PasswordManagerClient(std::shared_ptr<grpc::Channel> channel)
 : m_PassMgrStub(pswmgr::PasswordManager::NewStub(channel)) 

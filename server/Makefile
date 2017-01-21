@@ -45,7 +45,7 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check pswmgrd
 
-pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o pswmgr_server.o main.o sqlite3.o conf.o
+pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o server.o main.o sqlite3.o conf.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 %.grpc.pb.cc: %.proto

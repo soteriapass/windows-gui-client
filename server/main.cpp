@@ -1,4 +1,4 @@
-#include "pswmgr_server.h"
+#include "server.h"
 #include "conf.h"
 
 int main()
