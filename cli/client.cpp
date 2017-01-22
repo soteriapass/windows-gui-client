@@ -29,12 +29,6 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
         return false;
     }
 
-    std::cout << "IsPeerAuthenticated: " << context.auth_context()->IsPeerAuthenticated() << std::endl;
-    std::cout << "PeerIdentity: " << context.auth_context()->GetPeerIdentity()[0] << std::endl;
-    std::cout << "GetPeerIdentityPropertyName: " << context.auth_context()->GetPeerIdentityPropertyName() << std::endl;
-
-    std::cout << "Token: " << response.token() << std::endl;
-
     return true;
 }
 
