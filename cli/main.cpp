@@ -227,6 +227,23 @@ int main(int argc, char** argv)
                 {
                     return 3;
                 }
+                break;
+            }
+            case ACTION_DELETEPASSWORD:
+            {
+                if(!delete_password(client))
+                {
+                    return 4;
+                }       
+                break;
+            }
+            case ACTION_MODIFYPASSWORD:
+            {
+                if(!modify_password(client))
+                {
+                    return 5;
+                }
+                break;
             }
         }
     }

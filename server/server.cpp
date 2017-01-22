@@ -144,6 +144,14 @@ grpc::Status PasswordManagerServer::DeletePassword(grpc::ServerContext* context,
     }
     std::string peerName = { (*propertyValues.begin()).data() };
 
+    auto authTokenInfo = m_AuthTokens[peerName];
+    int userId = m_Database->GetUserId(authTokenInfo->username);
+
+    if(!m_Database->DeletePassword(userId, request->account_name()))
+    {
+        return grpc::Status(grpc::StatusCode::UNKNOWN, "Unknown error");
+    }
+
     return grpc::Status::OK;
 }
 
@@ -160,6 +168,14 @@ grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context,
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "Didn't find x-custom-auth-ticket in the call credentials");
     }
     std::string peerName = { (*propertyValues.begin()).data() };
+
+    auto authTokenInfo = m_AuthTokens[peerName];
+    int userId = m_Database->GetUserId(authTokenInfo->username);
+
+    if(!m_Database->ModifyPassword(userId, request->account_name(), request->password()))
+    {
+        return grpc::Status(grpc::StatusCode::UNKNOWN, "Unknown error");
+    }
 
     return grpc::Status::OK;
 }

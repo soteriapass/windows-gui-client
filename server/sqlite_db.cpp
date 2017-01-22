@@ -187,8 +187,6 @@ bool sqlite_db::AddPassword(int userId, const std::string& accountName, const st
     insert_sql << "INSERT INTO PASSWORDS(ID, USER_ID, ACCOUNT_NAME, USERNAME, PASSWORD, EXTRA) ";
     insert_sql << "VALUES (" << id << ","<< userId << ",'" << accountName << "','" << username << "','" << password << "','" << extra << "')";
 
-    logging::log("sql: " + insert_sql.str(), true);
-
     char* err = nullptr;
     int data = 0;
     int rc = sqlite3_exec(m_Database, insert_sql.str().c_str(), nullptr, nullptr, &err);
