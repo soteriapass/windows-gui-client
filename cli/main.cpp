@@ -4,7 +4,9 @@
 #include <fstream>
 
 #include <grpc++/grpc++.h>
+
 #include "client.h"
+#include "conf.h"
 
 enum CMD_ACTIONS
 {
@@ -36,12 +38,14 @@ bool login(PasswordManagerClient& client, const std::string& user, const std::st
 
 int main(int argc, char** argv)
 {
+    conf conf_file("pswmgr.conf");
+
     std::vector<CMD_ACTIONS> actions;
 
     std::string user;
     std::string new_user;
 
-    PasswordManagerClient client(PasswordManagerClient::GetChannel("localhost:4040"));
+    PasswordManagerClient client(PasswordManagerClient::GetChannel(conf_file.get_authentication_address_and_port()));
 
     for(int i = 0; i < argc; ++i)
     {
