@@ -7,21 +7,10 @@
 #include <fstream>
 
 #include "encryption_utils.h"
+#include "sqlite_db.h"
 
 // Static Member Initialization
 PasswordManagerServer* PasswordManagerServer::ms_Instance = nullptr;
-
-// Static Fucntions
-static int callback(void*, int argc, char** argv, char** azColName)
-{
-    for(int i = 0; i < argc; ++i)
-    {
-        std::string param = argv[i] ? argv[i] : "NULL";
-        std::cerr << azColName[i] << " = " << param << std::endl;
-    }
-    std::cerr << std::endl;
-    return 0;
-}
 
 PasswordManagerServer::PasswordManagerServer()
 : m_IsRunning(false)
@@ -38,39 +27,24 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
     //First check to see if there are any users
     //I f there are none then we can simply say whatever the resul
     //The authentication has succeeded
+    int userCount = m_Database->GetUserCount();
+    if(userCount == -1)
     {
-        int userCount = 0;
-        auto callbackFunc = [](void* unknown, int argc, char** argv, char** azColName) -> int
+        return grpc::Status(grpc::StatusCode::UNKNOWN, "");
+    }
+    else if(userCount == 0)
+    {
+        response->set_success(true);
+        auto iter = m_AuthTokens.find("no-user");
+        if(iter == m_AuthTokens.end())
         {
-            if(unknown != nullptr)
-            {
-                *reinterpret_cast<int*>(unknown) = argc;
-            }
-            return 0;
-        };
-        std::string sql = "SELECT * FROM USERS";
-        const char* data = "Callback function called";
-        char* err = nullptr;
-        int rc = sqlite3_exec(m_Database, sql.c_str(), callbackFunc, reinterpret_cast<void*>(userCount), &err);
-        if( rc != SQLITE_OK )
-        {
-            std::cerr << "sql error: " << err << std::endl;
-            return grpc::Status::OK;
+            auth_token_info* info = new auth_token_info(encryption::GenerateNewAuthToken("no-user"), "no-user");
+             
+            m_AuthTokens[info->token] = std::shared_ptr<auth_token_info>(info);
+            m_AuthTokens["no-user"] = std::shared_ptr<auth_token_info>(info);
         }
-        if(userCount == 0)
-        {
-            response->set_success(true);
-            auto iter = m_AuthTokens.find("no-user");
-            if(iter == m_AuthTokens.end())
-            {
-                auth_token_info* info = new auth_token_info(encryption::GenerateNewAuthToken("no-user"), "no-user");
-                
-                m_AuthTokens[info->token] = std::shared_ptr<auth_token_info>(info);
-                m_AuthTokens["no-user"] = std::shared_ptr<auth_token_info>(info);
-            }
-            response->set_token(m_AuthTokens["no-user"]->token);
-            return grpc::Status::OK;
-        }
+        response->set_token(m_AuthTokens["no-user"]->token);
+        return grpc::Status::OK;
     }
 
     {
@@ -86,6 +60,9 @@ grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, con
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
+    std::string salt = encryption::GetNewSalt(16);
+    std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
+    m_Database->InsertUser(m_Database->GetUserCount()+1, request->username(), hashedPassword, salt, 10000, true);
     return grpc::Status::OK;
 }
 
@@ -103,23 +80,9 @@ bool PasswordManagerServer::Init(conf& conf_file)
     if(m_Database != nullptr)
         return false;
 
-    char* err = nullptr;
-    int rc = sqlite3_open("pswmgr.db", &m_Database);
-    if(rc != SQLITE_OK)
-    {
-        std::cerr << "Can't open database: " << sqlite3_errmsg(m_Database) << std::endl;
-        return false;
-    }
-
-    const std::string create_sql = "CREATE TABLE IF NOT EXISTS USERS(ID INT PRIMARY KEY NOT NULL, USERNAME TEXT NOT NULL, PASSWORD CHAR(64) NOT NULL, SALT CHAR(16), INT ITERATIONS NOT NULL, BOOLEAN ADMIN NOT NULL);";
-    rc = sqlite3_exec(m_Database, create_sql.c_str(), callback, nullptr, &err);
-    if(rc != SQLITE_OK)
-    {
-        std::cerr << "Can't create table: " << err << std::endl;
-        return false;
-    }
-    return true;
-} 
+    m_Database = new sqlite_db();
+    return m_Database->Init(conf_file);
+}
 
 bool PasswordManagerServer::Run(conf& conf_file)
 {

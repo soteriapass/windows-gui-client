@@ -50,7 +50,7 @@ bool PasswordManagerClient::CreateUser(const std::string& user, const std::strin
     grpc::Status status = m_UserMgrStub->CreateUser(&context, request, &response);
     if(!status.ok())
     {
-        m_LastError = "Could not connect ot the server";
+        m_LastError = "Could not connect to the server";
         return false;
     }
 

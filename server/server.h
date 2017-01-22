@@ -7,11 +7,11 @@
 #include <memory>
 
 #include <grpc++/grpc++.h>
-#include <sqlite3.h>
 
 #include "pswmgr.grpc.pb.h"
 
 #include "conf.h"
+#include "db.h"
 #include "auth_token_info.h"
 #include "token_auth_metadata_processor.h"
 
@@ -34,7 +34,7 @@ private:
     static PasswordManagerServer* ms_Instance;
 
     bool m_IsRunning;
-    sqlite3* m_Database;
+    db* m_Database;
     std::map<std::string, std::shared_ptr<auth_token_info>> m_AuthTokens;
     
     std::shared_ptr<TokenAuthMetadataProcessor> m_TokenAuthMetadataProcessor;
