@@ -7,6 +7,7 @@
 
 #include <grpc++/grpc++.h>
 
+#include "conf.h"
 #include "token_authenticator.h"
 
 #include "pswmgr.grpc.pb.h"
@@ -14,15 +15,15 @@
 class PasswordManagerClient final
 {
 public:
-    PasswordManagerClient(std::shared_ptr<grpc::Channel> channel);
+    PasswordManagerClient(conf& conf_file, std::shared_ptr<grpc::Channel> channel);
 
     bool Authenticate(const std::string& user, const std::string& pass, bool create = false);
     bool CreateUser(const std::string& user, const std::string& pass);
     const std::string& GetLastError() const { return m_LastError; }
 
-    static auto GetChannel(const std::string& address) -> decltype(grpc::CreateChannel("", grpc::SslCredentials(grpc::SslCredentialsOptions())))
+    static auto GetChannel(conf& conf_file, const std::string& address) -> decltype(grpc::CreateChannel("", grpc::SslCredentials(grpc::SslCredentialsOptions())))
     {
-        std::ifstream file("/home/mfilion/programming/pswmgr/easy-rsa/keys/ca.crt", std::ifstream::in);
+        std::ifstream file(conf_file.get_server_ca_file(), std::ifstream::in);
         std::string ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
         auto credOptions = grpc::SslCredentialsOptions();
         credOptions.pem_root_certs = ca;
@@ -30,9 +31,9 @@ public:
         return grpc::CreateChannel(address, sslCreds);
     }
 
-    static auto GetChannel(const std::string& address, const std::shared_ptr<grpc::CallCredentials>& callCreds) ->decltype(GetChannel(""))
+    static auto GetChannel(conf& conf_file, const std::string& address, const std::shared_ptr<grpc::CallCredentials>& callCreds) ->decltype(GetChannel(conf_file, ""))
     {
-        std::ifstream file("/home/mfilion/programming/pswmgr/easy-rsa/keys/ca.crt", std::ifstream::in);
+        std::ifstream file(conf_file.get_server_ca_file(), std::ifstream::in);
         std::string ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
 
         auto credOptions = grpc::SslCredentialsOptions();
@@ -50,4 +51,5 @@ private:
     std::string m_LastError;
 
     TokenAuthenticator* m_TokenAuth;
+    conf& m_Conf;
 };

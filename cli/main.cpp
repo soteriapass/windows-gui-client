@@ -45,7 +45,7 @@ int main(int argc, char** argv)
     std::string user;
     std::string new_user;
 
-    PasswordManagerClient client(PasswordManagerClient::GetChannel(conf_file.get_authentication_address_and_port()));
+    PasswordManagerClient client(conf_file, PasswordManagerClient::GetChannel(conf_file, conf_file.get_authentication_address_and_port()));
 
     for(int i = 0; i < argc; ++i)
     {

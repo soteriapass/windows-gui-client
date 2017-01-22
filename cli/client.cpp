@@ -1,8 +1,9 @@
 #include "client.h"
 
-PasswordManagerClient::PasswordManagerClient(std::shared_ptr<grpc::Channel> channel)
+PasswordManagerClient::PasswordManagerClient(conf& conf_file, std::shared_ptr<grpc::Channel> channel)
 : m_AuthStub(pswmgr::Authentication::NewStub(channel)) 
 , m_TokenAuth(nullptr)
+, m_Conf(conf_file)
 {
 }
 
@@ -33,8 +34,8 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
     m_TokenAuth = new TokenAuthenticator(response.token());
 
     auto callCreds = grpc::MetadataCredentialsFromPlugin(std::unique_ptr<grpc::MetadataCredentialsPlugin>(m_TokenAuth));
-    m_PassMgrStub = pswmgr::PasswordManager::NewStub(GetChannel("", callCreds));
-    m_UserMgrStub = pswmgr::UserManagement::NewStub(GetChannel("", callCreds));
+    m_PassMgrStub = pswmgr::PasswordManager::NewStub(GetChannel(m_Conf, "", callCreds));
+    m_UserMgrStub = pswmgr::UserManagement::NewStub(GetChannel(m_Conf, "", callCreds));
 
     return true;
 }
