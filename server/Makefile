@@ -32,9 +32,7 @@
 CXX = g++
 CPPFLAGS += -I/usr/local/include -pthread -I../third_party/sqlite
 CXXFLAGS += -std=c++11
-LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc`       \
-           -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed \
-           -lprotobuf -lpthread -ldl
+LDFLAGS += -L/usr/local/lib `pkg-config --libs grpc++ grpc` -Wl,--no-as-needed -lgrpc++_reflection -Wl,--as-needed -lprotobuf -lpthread -ldl -lssl -lcrypto
 PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
@@ -45,7 +43,7 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check pswmgrd
 
-pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o server.o main.o sqlite3.o conf.o
+pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o server.o main.o sqlite3.o conf.o encryption_utils.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 %.grpc.pb.cc: %.proto

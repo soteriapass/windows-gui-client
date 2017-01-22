@@ -1,6 +1,8 @@
 #include "server.h"
 #include "conf.h"
 
+#include "encryption_utils.h"
+
 int main()
 {
     conf conf_file("pswmgrd.conf");

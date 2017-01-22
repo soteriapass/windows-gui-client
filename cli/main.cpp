@@ -13,20 +13,8 @@ enum CMD_ACTIONS
     ACTION_HELP,
 };
 
-auto get_channel(const std::string& address)
+bool add_user(PasswordManagerClient& client, const std::string& user, const std::string& pass, const std::string& new_user, const std::string& new_pass)
 {
-    std::ifstream file("/home/mfilion/programming/pswmgr/easy-rsa/keys/ca.crt", std::ifstream::in);
-    std::string ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-    auto credOptions = grpc::SslCredentialsOptions();
-    credOptions.pem_root_certs = ca;
-    auto sslCreds = grpc::SslCredentials(credOptions);
-    auto channel = grpc::CreateChannel(address, sslCreds);
-    return channel;
-}
-
-bool add_user(const std::string& user, const std::string& pass, const std::string& new_user, const std::string& new_pass)
-{
-    PasswordManagerClient client( get_channel("localhost:6060") );
     if(!client.Authenticate(user, pass, true))
     {
         std::cerr << client.GetLastError() << std::endl;
@@ -41,9 +29,8 @@ bool add_user(const std::string& user, const std::string& pass, const std::strin
     return true;
 }
 
-bool login(const std::string& user, const std::string& pass)
+bool login(PasswordManagerClient& client, const std::string& user, const std::string& pass)
 {
-    PasswordManagerClient client( get_channel("localhost:5050") );
     if(!client.Authenticate(user, pass, false))
     {
         std::cerr << client.GetLastError() << std::endl;
@@ -60,6 +47,8 @@ int main(int argc, char** argv)
     std::string pass;
     std::string new_user;
     std::string new_pass;
+
+    PasswordManagerClient client(PasswordManagerClient::GetChannel("localhost:4040"));
 
     for(int i = 0; i < argc; ++i)
     {
@@ -116,7 +105,7 @@ int main(int argc, char** argv)
                 {
                     std::cerr << "password not specified" << std::endl;
                 }
-                else if(!add_user(user, pass, new_user, new_pass))
+                else if(!add_user(client, user, pass, new_user, new_pass))
                 {
                     return 1;
                 }
@@ -124,7 +113,7 @@ int main(int argc, char** argv)
             }
             case ACTION_AUTHENTICATE:
             {
-                if(!login(user, pass))
+                if(!login(client, user, pass))
                 {
                     return 2;
                 }

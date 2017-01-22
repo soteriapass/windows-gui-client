@@ -24,7 +24,9 @@ conf::conf(const std::string& conf_path)
             std::istringstream is_line(line);
             if(std::getline(is_line, key, ' ') && std::getline(is_line, value) && key.size() != line.size() && value.size() != line.size())
             {
+#ifdef VERBOSE
                 std::cout << key << "=" << value << std::endl;
+#endif //VERBOSE
                 m_Values[key] = value;
             }
         }
@@ -35,10 +37,24 @@ conf::conf()
 {
     m_Values["Database"] = "pswmgr.db";
     m_Values["Log"] = "pswmgr.log";
+    m_Values["AuthenticationAddress"] = "0.0.0.0";
+    m_Values["AuthenticationPort"] = "4040";
     m_Values["PasswordManagerAddress"] = "0.0.0.0";
     m_Values["PasswordManagerPort"] = "5050";
     m_Values["UserManagementAddress"] = "127.0.0.1";
     m_Values["UserManagementPort"] = "6060";
+}
+
+const std::string conf::get_authentication_address_and_port() const
+{
+    std::stringstream ss;
+    std::string address;
+    std::string port;
+    get_key_value("AuthenticationAddress", address);
+    get_key_value("AuthenticationPort", port);
+    ss << address << ":" << port;
+    return ss.str();
+
 }
 
 const std::string conf::get_user_mangement_address_and_port() const

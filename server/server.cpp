@@ -6,6 +6,8 @@
 #include <iostream>
 #include <fstream>
 
+#include "encryption_utils.h"
+
 // Static Member Initialization
 PasswordManagerServer* PasswordManagerServer::ms_Instance = nullptr;
 
@@ -31,7 +33,7 @@ PasswordManagerServer::~PasswordManagerServer()
 {
 }
 
-grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, const pswmgr::AuthenticationRequest* request, pswmgr::SimpleReply* response)
+grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, const pswmgr::AuthenticationRequest* request, pswmgr::AuthReply* response)
 {
     //First check to see if there are any users
     //I f there are none then we can simply say whatever the resul
@@ -49,7 +51,7 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
         std::string sql = "SELECT * FROM USERS";
         const char* data = "Callback function called";
         char* err = nullptr;
-        int rc = sqlite3_exec(m_Database, sql.c_str(), callbackFunc, (void*)userCount, &err);
+        int rc = sqlite3_exec(m_Database, sql.c_str(), callbackFunc, reinterpret_cast<void*>(userCount), &err);
         if( rc != SQLITE_OK )
         {
             std::cerr << "sql error: " << err << std::endl;
@@ -57,7 +59,16 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
         }
         if(userCount == 0)
         {
-            response->set_sucess(true);
+            response->set_success(true);
+            auto iter = m_AuthTokens.find("no-user");
+            if(iter == m_AuthTokens.end())
+            {
+                auth_token_info* info = new auth_token_info(encryption::GenerateNewAuthToken("no-user"), "no-user");
+                
+                m_AuthTokens[info->token] = std::shared_ptr<auth_token_info>(info);
+                m_AuthTokens["no-user"] = std::shared_ptr<auth_token_info>(info);
+            }
+            response->set_token(m_AuthTokens["no-user"]->token);
             return grpc::Status::OK;
         }
     }
@@ -71,6 +82,10 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
 
 grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::SimpleReply* response)
 {
+    if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
+    }
     return grpc::Status::OK;
 }
 
@@ -96,7 +111,7 @@ bool PasswordManagerServer::Init(conf& conf_file)
         return false;
     }
 
-    const std::string create_sql = "CREATE TABLE IF NOT EXISTS USERS(ID INT PRIMARY KEY NOT NULL, USERNAME TEXT NOT NULL, PASSWORD CHAR(256) NOT NULL, BOOLEAN ADMIN NOT NULL);";
+    const std::string create_sql = "CREATE TABLE IF NOT EXISTS USERS(ID INT PRIMARY KEY NOT NULL, USERNAME TEXT NOT NULL, PASSWORD CHAR(64) NOT NULL, SALT CHAR(16), INT ITERATIONS NOT NULL, BOOLEAN ADMIN NOT NULL);";
     rc = sqlite3_exec(m_Database, create_sql.c_str(), callback, nullptr, &err);
     if(rc != SQLITE_OK)
     {
@@ -141,6 +156,23 @@ bool PasswordManagerServer::Run(conf& conf_file)
         ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     }
 
+    std::unique_ptr<grpc::Server> authenticationServer;
+    {
+        const std::string server_address(conf_file.get_authentication_address_and_port());
+        grpc::ServerBuilder builder;
+
+        auto credOptions = grpc::SslServerCredentialsOptions();
+        credOptions.pem_root_certs = ca;
+        credOptions.pem_key_cert_pairs.push_back({ key, cert });
+        auto channelCreds = grpc::SslServerCredentials(credOptions);
+
+        builder.AddListeningPort(server_address, channelCreds);
+        builder.RegisterService(static_cast<pswmgr::Authentication::Service*>(this));
+
+        authenticationServer = builder.BuildAndStart();
+        std::cout << "Authentication service listening on " << server_address << std::endl;
+    }
+
     std::unique_ptr<grpc::Server> passwordServer;
     {
         const std::string server_address(conf_file.get_password_manager_address_and_port());
@@ -177,6 +209,7 @@ bool PasswordManagerServer::Run(conf& conf_file)
 
     m_IsRunning = true;
 
+    authenticationServer->Wait();
     passwordServer->Wait();
     userMgmtServer->Wait();
 

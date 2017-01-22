@@ -1,8 +1,7 @@
 #include "client.h"
 
 PasswordManagerClient::PasswordManagerClient(std::shared_ptr<grpc::Channel> channel)
-: m_PassMgrStub(pswmgr::PasswordManager::NewStub(channel)) 
-, m_UserMgrStub(pswmgr::UserManagement::NewStub(channel))
+: m_AuthStub(pswmgr::Authentication::NewStub(channel)) 
 {
 }
 
@@ -13,22 +12,28 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
     request.set_username(user);
     request.set_password(pass);
 
-    pswmgr::SimpleReply response;
+    pswmgr::AuthReply response;
 
-    grpc::Status status = createUser 
-                              ? m_UserMgrStub->Authenticate(&context, request, &response) 
-                              : m_PassMgrStub->Authenticate(&context, request, &response);
+    //std::cout << "IsPeerAuthenticated: " << context.auth_context()->IsPeerAuthenticated() << std::endl;
+
+    grpc::Status status = m_AuthStub->Authenticate(&context, request, &response);
     if(!status.ok())
     {
         m_LastError = "Could not connect to server";
         return false;
     }
 
-    if(!response.sucess())
+    if(!response.success())
     {
         m_LastError = "Authentication error";
         return false;
     }
+
+    std::cout << "IsPeerAuthenticated: " << context.auth_context()->IsPeerAuthenticated() << std::endl;
+    std::cout << "PeerIdentity: " << context.auth_context()->GetPeerIdentity()[0] << std::endl;
+    std::cout << "GetPeerIdentityPropertyName: " << context.auth_context()->GetPeerIdentityPropertyName() << std::endl;
+
+    std::cout << "Token: " << response.token() << std::endl;
 
     return true;
 }
