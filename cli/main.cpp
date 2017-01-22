@@ -13,13 +13,8 @@ enum CMD_ACTIONS
     ACTION_HELP,
 };
 
-bool add_user(PasswordManagerClient& client, const std::string& user, const std::string& pass, const std::string& new_user, const std::string& new_pass)
+bool add_user(PasswordManagerClient& client, const std::string& new_user, const std::string& new_pass)
 {
-    if(!client.Authenticate(user, pass, true))
-    {
-        std::cerr << client.GetLastError() << std::endl;
-        return false;
-    }
     if(!client.CreateUser(new_user, new_pass))
     {
         std::cerr << "Could not create user" << std::endl;
@@ -44,9 +39,7 @@ int main(int argc, char** argv)
     std::vector<CMD_ACTIONS> actions;
 
     std::string user;
-    std::string pass;
     std::string new_user;
-    std::string new_pass;
 
     PasswordManagerClient client(PasswordManagerClient::GetChannel("localhost:4040"));
 
@@ -54,6 +47,7 @@ int main(int argc, char** argv)
     {
         if(strcmp(argv[i], "-add_user") == 0 || strcmp(argv[i], "-a") == 0) 
         {
+            actions.push_back(ACTION_AUTHENTICATE);
             actions.push_back(ACTION_ADDUSER);
         }
         else if(strcmp(argv[i], "-login") == 0 || strcmp(argv[i], "-l") == 0)
@@ -65,25 +59,14 @@ int main(int argc, char** argv)
             if(i+1 < argc)
                 user = argv[i+1];
         }
-        else if(strcmp(argv[i], "-pass") == 0 || strcmp(argv[i], "-p") == 0)
-        {
-            if(i+1 < argc)
-                pass = argv[i+1];
-        }
         else if(strcmp(argv[i], "-new_user") == 0)
         {
             if(i+1 < argc)
                 new_user = argv[i+1];
         }
-        else if(strcmp(argv[i], "-new_pass") == 0)
-        {
-            if(i+1 < argc)
-                new_pass = argv[i+1];
-        }
-
     }
 
-    if(actions.empty() && !user.empty() && !pass.empty())
+    if(actions.empty() && !user.empty())
     {
         actions.push_back(ACTION_AUTHENTICATE);
     }
@@ -101,18 +84,33 @@ int main(int argc, char** argv)
                 {
                     std::cerr << "username not specified" << std::endl;
                 }
-                else if(new_pass.empty())
+                else
                 {
-                    std::cerr << "password not specified" << std::endl;
-                }
-                else if(!add_user(client, user, pass, new_user, new_pass))
-                {
-                    return 1;
+                    std::string new_pass;
+                    std::string new_pass_confirm;
+                    while(new_pass.empty() || new_pass != new_pass_confirm)
+                    {
+                        std::cout << "password for " << new_user << ":";
+                        std::cin >> new_pass;
+ 
+                        std::cout << "confirm password for " << new_user << ":";
+                        std::cin >> new_pass_confirm;
+                    };
+                    if(!add_user(client, new_user, new_pass))
+                    {
+                        return 1;
+                    }
                 }
                 break;
             }
             case ACTION_AUTHENTICATE:
             {
+                std::string pass;
+                if(!user.empty())
+                {
+                    std::cout << "password for " << user << ":";
+                    std::cin >> pass;
+                }
                 if(!login(client, user, pass))
                 {
                     return 2;
