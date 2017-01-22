@@ -38,6 +38,7 @@ pswmgrd
 
 # Specific directories
 tmp
+easy-rsa
 *.opendb
 
 # Protocol Buffer and gRpc files
