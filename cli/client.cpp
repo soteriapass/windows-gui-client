@@ -16,8 +16,6 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
 
     pswmgr::AuthReply response;
 
-    //std::cout << "IsPeerAuthenticated: " << context.auth_context()->IsPeerAuthenticated() << std::endl;
-
     grpc::Status status = m_AuthStub->Authenticate(&context, request, &response);
     if(!status.ok())
     {
@@ -34,14 +32,13 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
     m_TokenAuth = new TokenAuthenticator(response.token());
 
     auto callCreds = grpc::MetadataCredentialsFromPlugin(std::unique_ptr<grpc::MetadataCredentialsPlugin>(m_TokenAuth));
-    m_PassMgrStub = pswmgr::PasswordManager::NewStub(GetChannel(m_Conf, "", callCreds));
-    m_UserMgrStub = pswmgr::UserManagement::NewStub(GetChannel(m_Conf, "", callCreds));
+    m_PassMgrStub = pswmgr::PasswordManager::NewStub(GetChannel(m_Conf, m_Conf.get_password_manager_address_and_port(), callCreds));
+    m_UserMgrStub = pswmgr::UserManagement::NewStub(GetChannel(m_Conf, m_Conf.get_user_mangement_address_and_port(), callCreds));
 
     return true;
 }
 
 bool PasswordManagerClient::CreateUser(const std::string& user, const std::string& pass)
 {
-// virtual ::grpc::Status CreateUser(::grpc::ClientContext* context, const ::pswmgr::UserCreationRequest& request, ::pswmgr::SimpleReply* response)
 
 }
