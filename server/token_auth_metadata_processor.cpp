@@ -12,7 +12,6 @@ TokenAuthMetadataProcessor::TokenAuthMetadataProcessor(PasswordManagerServer* se
 
 grpc::Status TokenAuthMetadataProcessor::Process(const grpc::AuthMetadataProcessor::InputMetadata& auth_metadata, grpc::AuthContext* context, grpc::AuthMetadataProcessor::OutputMetadata* consumed_auth_metadata, grpc::AuthMetadataProcessor::OutputMetadata* response_metadata)
 {
-    std::cout << "TOKEN AUTH::PROCESS CALLED" << std::endl;
     //return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, grpc::string("Invalid principal"));
     auto authMetadata = auth_metadata.find(kIdentityPropName);
     if(authMetadata == auth_metadata.end())

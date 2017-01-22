@@ -47,11 +47,25 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
         return grpc::Status::OK;
     }
 
+    std::string salt = m_Database->GetSaltForUser(request->username());
+    std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
+    if(m_Database->ValidPasswordForUser(request->username(), hashedPassword))
     {
-        std::stringstream sql;
-        sql << "SELECT ID, USERNAME, PASSWORD, ADMIN WHERE USERNAME == \"" << request->username() << "\"";
+        response->set_success(true);
+        auto iter = m_AuthTokens.find(request->username());
+        if(iter == m_AuthTokens.end())
+        {
+            auth_token_info* info = new auth_token_info(encryption::GenerateNewAuthToken(request->username()), request->username());
+
+            m_AuthTokens[info->token] = std::shared_ptr<auth_token_info>(info);
+            m_AuthTokens[request->username()] = std::shared_ptr<auth_token_info>(info);
+        }
+
+        response->set_token(m_AuthTokens[request->username()]->token);
+        return grpc::Status::OK;
     }
-    return grpc::Status::OK;
+
+    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Invalid username or password");
 }
 
 grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::SimpleReply* response)
