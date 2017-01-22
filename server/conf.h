@@ -29,7 +29,5 @@ public:
         return false;
     }
 private:
-    std::string m_DatabaseFile;
-    std::string m_LogFile;
     std::map<std::string, std::string> m_Values;
 };
