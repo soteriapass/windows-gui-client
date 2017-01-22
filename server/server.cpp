@@ -156,6 +156,8 @@ bool PasswordManagerServer::Run(conf& conf_file)
         ca = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
     }
 
+    m_TokenAuthMetadataProcessor = std::shared_ptr<TokenAuthMetadataProcessor>(new TokenAuthMetadataProcessor(this));
+
     std::unique_ptr<grpc::Server> authenticationServer;
     {
         const std::string server_address(conf_file.get_authentication_address_and_port());
@@ -164,6 +166,7 @@ bool PasswordManagerServer::Run(conf& conf_file)
         auto credOptions = grpc::SslServerCredentialsOptions();
         credOptions.pem_root_certs = ca;
         credOptions.pem_key_cert_pairs.push_back({ key, cert });
+
         auto channelCreds = grpc::SslServerCredentials(credOptions);
 
         builder.AddListeningPort(server_address, channelCreds);
@@ -181,7 +184,9 @@ bool PasswordManagerServer::Run(conf& conf_file)
         auto credOptions = grpc::SslServerCredentialsOptions();
         credOptions.pem_root_certs = ca;
         credOptions.pem_key_cert_pairs.push_back({ key, cert });
+
         auto channelCreds = grpc::SslServerCredentials(credOptions);
+        channelCreds->SetAuthMetadataProcessor(m_TokenAuthMetadataProcessor);
 
         builder.AddListeningPort(server_address, channelCreds);
         builder.RegisterService(static_cast<pswmgr::PasswordManager::Service*>(this));
@@ -198,7 +203,9 @@ bool PasswordManagerServer::Run(conf& conf_file)
         auto credOptions = grpc::SslServerCredentialsOptions();
         credOptions.pem_root_certs = ca;
         credOptions.pem_key_cert_pairs.push_back({ key, cert });
+
         auto channelCreds = grpc::SslServerCredentials(credOptions);
+        channelCreds->SetAuthMetadataProcessor(m_TokenAuthMetadataProcessor);
 
         builder.AddListeningPort(server_address, channelCreds);
         builder.RegisterService(static_cast<pswmgr::UserManagement::Service*>(this));

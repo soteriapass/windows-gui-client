@@ -13,6 +13,7 @@
 
 #include "conf.h"
 #include "auth_token_info.h"
+#include "token_auth_metadata_processor.h"
 
 class PasswordManagerServer final : public pswmgr::PasswordManager::Service, public pswmgr::UserManagement::Service, public pswmgr::Authentication::Service
 {
@@ -35,4 +36,6 @@ private:
     bool m_IsRunning;
     sqlite3* m_Database;
     std::map<std::string, std::shared_ptr<auth_token_info>> m_AuthTokens;
+    
+    std::shared_ptr<TokenAuthMetadataProcessor> m_TokenAuthMetadataProcessor;
 };

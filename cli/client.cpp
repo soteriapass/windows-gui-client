@@ -40,5 +40,24 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
 
 bool PasswordManagerClient::CreateUser(const std::string& user, const std::string& pass)
 {
+    grpc::ClientContext context;
+    pswmgr::UserCreationRequest request;
+    request.set_username(user);
+    request.set_password(pass);
 
+    pswmgr::SimpleReply response;
+
+    grpc::Status status = m_UserMgrStub->CreateUser(&context, request, &response);
+    if(!status.ok())
+    {
+        m_LastError = "Could not connect ot the server";
+        return false;
+    }
+
+    if(!response.success())
+    {
+        return false;
+    }
+
+    return true;
 }
