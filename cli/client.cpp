@@ -2,6 +2,7 @@
 
 PasswordManagerClient::PasswordManagerClient(std::shared_ptr<grpc::Channel> channel)
 : m_AuthStub(pswmgr::Authentication::NewStub(channel)) 
+, m_TokenAuth(nullptr)
 {
 }
 
@@ -28,6 +29,12 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
         m_LastError = "Authentication error";
         return false;
     }
+
+    m_TokenAuth = new TokenAuthenticator(response.token());
+
+    auto callCreds = grpc::MetadataCredentialsFromPlugin(std::unique_ptr<grpc::MetadataCredentialsPlugin>(m_TokenAuth));
+    m_PassMgrStub = pswmgr::PasswordManager::NewStub(GetChannel("", callCreds));
+    m_UserMgrStub = pswmgr::UserManagement::NewStub(GetChannel("", callCreds));
 
     return true;
 }
