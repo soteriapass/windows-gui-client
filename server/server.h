@@ -27,8 +27,17 @@ protected:
     ~PasswordManagerServer();
 
 private:
-    virtual grpc::Status Authenticate(grpc::ServerContext* context, const pswmgr::AuthenticationRequest* request, pswmgr::AuthReply* response) override;
-    virtual grpc::Status CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::SimpleReply* response) override;
+    //Authentication Service
+    grpc::Status Authenticate(grpc::ServerContext* context, const pswmgr::AuthenticationRequest* request, pswmgr::AuthReply* response) override;
+
+    //Password Service
+    grpc::Status ListPasswords(grpc::ServerContext* context, const pswmgr::SimpleRequest* request, pswmgr::PasswordList* response) override;
+    grpc::Status AddPassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response) override;
+    grpc::Status DeletePassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response) override;
+    grpc::Status ModifyPassword(grpc::ServerContext* context, const pswmgr::PasswordModifyRequest* request, pswmgr::SimpleReply* response) override;
+
+    // User Management Service
+    grpc::Status CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::SimpleReply* response) override;
 
 private:
     static PasswordManagerServer* ms_Instance;

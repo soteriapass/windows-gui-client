@@ -68,6 +68,42 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
     return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Invalid username or password");
 }
 
+grpc::Status PasswordManagerServer::ListPasswords(grpc::ServerContext* context, const pswmgr::SimpleRequest* request, pswmgr::PasswordList* response)
+{
+    if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
+    }
+    return grpc::Status::OK;
+}
+
+grpc::Status PasswordManagerServer::AddPassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response)
+{
+    if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
+    }
+    return grpc::Status::OK;
+}
+
+grpc::Status PasswordManagerServer::DeletePassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response)
+{
+    if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
+    }
+    return grpc::Status::OK;
+}
+
+grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context, const pswmgr::PasswordModifyRequest* request, pswmgr::SimpleReply* response)
+{
+    if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
+    }
+    return grpc::Status::OK;
+}
+
 grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::SimpleReply* response)
 {
     if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
