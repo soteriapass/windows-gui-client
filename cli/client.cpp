@@ -17,15 +17,14 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
     pswmgr::AuthReply response;
 
     grpc::Status status = m_AuthStub->Authenticate(&context, request, &response);
-    if(!status.ok())
+    if(status.error_code() == grpc::StatusCode::UNAUTHENTICATED)
     {
-        m_LastError = "Could not connect to server";
+        m_LastError = status.error_message();
         return false;
     }
-
-    if(!response.success())
+    else if(!status.ok())
     {
-        m_LastError = "Authentication error";
+        m_LastError = "Could not connect to server";
         return false;
     }
 
@@ -56,8 +55,95 @@ bool PasswordManagerClient::CreateUser(const std::string& user, const std::strin
 
     if(!response.success())
     {
+        m_LastError = "Uknown";
         return false;
     }
 
     return true;
 }
+
+bool PasswordManagerClient::AddPassword(const std::string& account_name, const std::string& username, const std::string& password, const std::string& extra)
+{
+    grpc::ClientContext context;
+    pswmgr::PasswordEntry request;
+    request.set_account_name(account_name);
+    request.set_username(username);
+    request.set_password(password);
+    request.set_extra(extra);
+
+    pswmgr::SimpleReply response;
+    grpc::Status status = m_PassMgrStub->AddPassword(&context, request, &response);
+    if(!status.ok())
+    {
+        m_LastError = "Could not connect to the server";
+        return false;
+    }
+
+    if(!response.success())
+    {
+        m_LastError = "Uknown";
+        return false;
+    }
+
+    return true;
+}
+
+bool PasswordManagerClient::DeletePassword(const std::string& account_name)
+{
+    grpc::ClientContext context;
+    pswmgr::PasswordEntry request;
+    request.set_account_name(account_name);
+
+    pswmgr::SimpleReply response;
+    grpc::Status status = m_PassMgrStub->DeletePassword(&context, request, &response);
+    if(!status.ok())
+    {
+        m_LastError = status.error_message();
+        return false;
+    }
+
+    return true;
+}
+
+bool PasswordManagerClient::ListPasswords()
+{
+    grpc::ClientContext context;
+    pswmgr::SimpleRequest request;
+    pswmgr::PasswordList response;
+
+    grpc::Status status = m_PassMgrStub->ListPasswords(&context, request, &response);
+    if(!status.ok())
+    {
+        m_LastError = status.error_message();
+        return false;
+    }
+
+    for(const pswmgr::PasswordEntry& entry: response.passwords())
+    {
+        std::cout << "account name: " << entry.account_name() << std::endl;
+        std::cout << "username: " << entry.username() << std::endl;
+        std::cout << "password: " << entry.password() << std::endl;
+        std::cout << "extra: " << entry.extra() << std::endl;
+        std::cout << std::endl;
+    }
+    return true;
+}
+
+bool PasswordManagerClient::ModifyPassword(const std::string& account_name, const std::string& new_password)
+{
+    grpc::ClientContext context;
+    pswmgr::PasswordEntry request;
+    request.set_account_name(account_name);
+    request.set_password(new_password);
+
+    pswmgr::SimpleReply response;
+    grpc::Status status = m_PassMgrStub->ModifyPassword(&context, request, &response);
+    if(!status.ok())
+    {
+        m_LastError = status.error_message();
+        return false;
+    }
+
+    return true;
+}
+

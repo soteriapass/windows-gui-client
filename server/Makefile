@@ -43,7 +43,7 @@ vpath %.proto $(PROTOS_PATH)
 
 all: system-check pswmgrd
 
-pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o server.o main.o sqlite3.o conf.o encryption_utils.o token_auth_metadata_processor.o sqlite_db.o
+pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o server.o main.o sqlite3.o conf.o encryption_utils.o token_auth_metadata_processor.o sqlite_db.o log.o
 	$(CXX) $^ $(LDFLAGS) -o $@
 
 %.grpc.pb.cc: %.proto

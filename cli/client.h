@@ -21,6 +21,11 @@ public:
     bool CreateUser(const std::string& user, const std::string& pass);
     const std::string& GetLastError() const { return m_LastError; }
 
+    bool AddPassword(const std::string& account_name, const std::string& username, const std::string& password, const std::string& extra);
+    bool DeletePassword(const std::string& account_name);
+    bool ListPasswords();
+    bool ModifyPassword(const std::string& account_name, const std::string& new_password);
+
     static auto GetChannel(conf& conf_file, const std::string& address) -> decltype(grpc::CreateChannel("", grpc::SslCredentials(grpc::SslCredentialsOptions())))
     {
         std::ifstream file(conf_file.get_server_ca_file(), std::ifstream::in);

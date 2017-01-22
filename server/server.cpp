@@ -7,6 +7,7 @@
 #include <fstream>
 
 #include "encryption_utils.h"
+#include "log.h"
 #include "sqlite_db.h"
 
 // Static Member Initialization
@@ -65,7 +66,7 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
         return grpc::Status::OK;
     }
 
-    return grpc::Status(grpc::StatusCode::INVALID_ARGUMENT, "Invalid username or password");
+    return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "Invalid username or password");
 }
 
 grpc::Status PasswordManagerServer::ListPasswords(grpc::ServerContext* context, const pswmgr::SimpleRequest* request, pswmgr::PasswordList* response)
@@ -74,15 +75,58 @@ grpc::Status PasswordManagerServer::ListPasswords(grpc::ServerContext* context, 
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
+
+    auto propertyValues = context->auth_context()->FindPropertyValues(context->auth_context()->GetPeerIdentityPropertyName());
+    if(propertyValues.empty())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "Didn't find x-custom-auth-ticket in the call credentials");
+    }
+    std::string peerName = { (*propertyValues.begin()).data() };
+
+    auto authTokenInfo = m_AuthTokens[peerName];
+    int userId = m_Database->GetUserId(authTokenInfo->username);
+
+    auto callbackFunc = [](char* account_name, char* username, char* password, char* extra, void* cookie) -> void
+    {
+        pswmgr::PasswordList* response = reinterpret_cast<pswmgr::PasswordList*>(cookie);
+        pswmgr::PasswordEntry* entry = response->add_passwords();
+        entry->set_account_name({ account_name });
+        entry->set_username({ username });
+        entry->set_password({ password });
+        entry->set_extra({ extra });
+    };
+
+    if(!m_Database->ListPasswords(userId, callbackFunc, response))
+    {
+        return grpc::Status(grpc::StatusCode::UNAVAILABLE, "");
+    }
+
     return grpc::Status::OK;
 }
 
 grpc::Status PasswordManagerServer::AddPassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response)
 {
+    logging::log("PasswordManagerServer::AddPassword", true);
     if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
+
+    auto propertyValues = context->auth_context()->FindPropertyValues(context->auth_context()->GetPeerIdentityPropertyName());
+    if(propertyValues.empty())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "Didn't find x-custom-auth-ticket in the call credentials");
+    }
+    std::string peerName = { (*propertyValues.begin()).data() };
+
+    auto authTokenInfo = m_AuthTokens[peerName];
+    int userId = m_Database->GetUserId(authTokenInfo->username);
+
+    if(!m_Database->AddPassword(userId, request->account_name(), request->username(), request->password(), request->extra()))
+    {
+        return grpc::Status(grpc::StatusCode::UNKNOWN, "");
+    }
+    response->set_success(true);
     return grpc::Status::OK;
 }
 
@@ -92,15 +136,31 @@ grpc::Status PasswordManagerServer::DeletePassword(grpc::ServerContext* context,
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
+
+    auto propertyValues = context->auth_context()->FindPropertyValues(context->auth_context()->GetPeerIdentityPropertyName());
+    if(propertyValues.empty())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "Didn't find x-custom-auth-ticket in the call credentials");
+    }
+    std::string peerName = { (*propertyValues.begin()).data() };
+
     return grpc::Status::OK;
 }
 
-grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context, const pswmgr::PasswordModifyRequest* request, pswmgr::SimpleReply* response)
+grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response)
 {
     if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
+
+    auto propertyValues = context->auth_context()->FindPropertyValues(context->auth_context()->GetPeerIdentityPropertyName());
+    if(propertyValues.empty())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "Didn't find x-custom-auth-ticket in the call credentials");
+    }
+    std::string peerName = { (*propertyValues.begin()).data() };
+
     return grpc::Status::OK;
 }
 
@@ -110,9 +170,13 @@ grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, con
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
+
     std::string salt = encryption::GetNewSalt(16);
     std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
-    m_Database->InsertUser(m_Database->GetUserCount()+1, request->username(), hashedPassword, salt, 10000, true);
+    if(m_Database->InsertUser(m_Database->GetUserCount()+1, request->username(), hashedPassword, salt, 10000, true))
+    {
+        response->set_success(true);
+    }
     return grpc::Status::OK;
 }
 
