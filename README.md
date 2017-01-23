@@ -1,7 +1,15 @@
 # pswmgr
-Password Manager that uses RSA public/private key to encrypt and store passwords
+Password Manager that uses a client/server architecture to store encrypted passwords remotely
 
 # Dependencies
-gRpc
-Protocol Buffers
-OpenSSL
+* gRpc
+* Protocol Buffers
+* OpenSSL
+* Sqlite3 (available in repos)
+
+# Supported platforms
+* Windows (GUI)
+* Linux
+ * Server
+ * Command Line Interface
+* Android (GUI)
