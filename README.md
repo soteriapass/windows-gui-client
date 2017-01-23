@@ -13,3 +13,8 @@ Password Manager that uses a client/server architecture to store encrypted passw
  * Server
  * Command Line Interface
 * Android (GUI)
+
+First Header  | Second Header
+------------- | -------------
+Content Cell  | Content Cell
+Content Cell  | Content Cell
