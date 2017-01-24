@@ -1,6 +1,7 @@
 ﻿using Newtonsoft.Json;
 using System.ComponentModel;
 using System.IO;
+using System;
 
 namespace PasswordManager
 {
@@ -20,6 +21,12 @@ namespace PasswordManager
 
         [JsonProperty]
         private string _AuthenticationPort;
+
+        [JsonProperty]
+        private string _PasswordManagerAddress;
+
+        [JsonProperty]
+        private string _PasswordManagerPort;
 
         [JsonProperty]
         private string _Password;
@@ -68,6 +75,24 @@ namespace PasswordManager
             get { return string.Format("{0}:{1}", _AuthenticationAddress, _AuthenticationPort); }
         }
 
+        public string PasswordManagerAddress
+        {
+            get { return _PasswordManagerAddress; }
+            set { _PasswordManagerAddress = value; }
+        }
+
+        public string PasswordManagerPort
+        {
+            get { return _PasswordManagerPort; }
+            set { _PasswordManagerPort = value; }
+        }
+
+        [Browsable(false)]
+        public string PasswordManagerChannel
+        {
+            get { return string.Format("{0}:{1}", _PasswordManagerAddress, _PasswordManagerPort); }
+        }
+
         [Browsable(false)]
         public string Password
         {
@@ -91,6 +116,13 @@ namespace PasswordManager
         public void Save(string filename)
         {
             File.WriteAllText(filename, JsonConvert.SerializeObject(this, Formatting.Indented));
+        }
+
+        internal bool IsValid()
+        {
+            return !string.IsNullOrEmpty(_ServerCertificate) && !string.IsNullOrEmpty(_AuthenticationAddress) && 
+                !string.IsNullOrEmpty(_AuthenticationPort) && !string.IsNullOrEmpty(_PasswordManagerAddress) && 
+                !string.IsNullOrEmpty(_PasswordManagerPort);
         }
 
         #endregion

@@ -30,7 +30,7 @@ namespace PasswordManager
 
         public ICommand ShowOptions
         {
-            get { return new ShowOptionsCommand(); }
+            get { return new ShowOptionsCommand(_View, this); }
         }
 
         public ICommand Exit
@@ -42,8 +42,11 @@ namespace PasswordManager
 
         #region Methods
 
-        private async void Authenticate()
+        public async void Authenticate()
         {
+            if (!_Model.IsValid())
+                return;
+
             if (!File.Exists(_Model.ServerCertificate))
                 return;
 
@@ -64,7 +67,7 @@ namespace PasswordManager
                 if (view.ShowDialog() == true)
                 {
                     request.Username = _Model.Username;
-                    request.Password = "asdf";// _Model.Password;
+                    request.Password = "asdf";// _Model.Password; TODO: FIX THIS
                 }
             }
 

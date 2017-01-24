@@ -15,7 +15,7 @@
 
         public OptionsView()
         {
-            _ViewModel = new OptionsViewModel();
+            _ViewModel = new OptionsViewModel(this);
             DataContext = _ViewModel;
 
             InitializeComponent();
