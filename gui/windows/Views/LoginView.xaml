@@ -1,0 +1,35 @@
+﻿<Window x:Class="PasswordManager.LoginView"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        Title="Login" Height="200" Width="400">
+    <Grid>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="25"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="Auto"/>
+            <ColumnDefinition Width="5"/>
+            <ColumnDefinition Width="200"/>
+            <ColumnDefinition Width="*"/>
+            <ColumnDefinition Width="25"/>
+        </Grid.ColumnDefinitions>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="15"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="15"/>
+            <RowDefinition Height="25"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="25"/>
+        </Grid.RowDefinitions>
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="Username:"/>
+        <TextBox Grid.Row="2" Grid.Column="4" Grid.ColumnSpan="2" Text="{Binding Username}" Width="269"/>
+
+        <TextBlock Grid.Row="4" Grid.Column="1" Text="Password:"/>
+        <PasswordBox Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2" PasswordChanged="PasswordBox_PasswordChanged" Width="269"/>
+
+        <Button Grid.Row="6" Grid.Column="5">Login</Button>
+    </Grid>
+</Window>
