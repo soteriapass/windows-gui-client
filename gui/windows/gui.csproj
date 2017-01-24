@@ -98,6 +98,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="Commands\AbstractCommand.cs" />
+    <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Commands\Exit.cs" />
     <Compile Include="Commands\ShowOptions.cs" />
     <Compile Include="Conf.cs" />
