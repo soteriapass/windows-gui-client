@@ -7,6 +7,8 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Pswmgr;
+using System;
 
 namespace PasswordManager
 {
@@ -52,6 +54,22 @@ namespace PasswordManager
         public ICommand Exit
         {
             get { return new ExitCommand(); }
+        }
+
+        public ICommand AddPassword
+        {
+            get { return new NewPasswordCommand(_View, this); }
+        }
+
+        public ICommand RefreshPasswords
+        {
+            get
+            {
+                return new DelegateCommand(delegate
+                {
+                    FetchPasswords();
+                });
+            }
         }
 
         public string ConnectedStatus
@@ -123,7 +141,7 @@ namespace PasswordManager
             var compositeCreds = ChannelCredentials.Create(creds, callCreds);
             Channel passwordChannel = new Channel(_Model.PasswordManagerChannel, compositeCreds);
             _Client = new Pswmgr.PasswordManager.PasswordManagerClient(passwordChannel);
-            OnPasswordClientCreated();
+            FetchPasswords();
         }
 
         private async Task CustomAuthProcessor(AuthInterceptorContext context, Metadata metadata)
@@ -132,7 +150,7 @@ namespace PasswordManager
             return;
         }
 
-        private async void OnPasswordClientCreated()
+        private async void FetchPasswords()
         {
             if (_Client == null)
                 return;
@@ -145,6 +163,13 @@ namespace PasswordManager
             {
                 _Passwords.Add(password);
             }
+        }
+
+        internal async Task<bool> AddNewPassword(PasswordEntry newPassword)
+        {
+            var response = await _Client.AddPasswordAsync(newPassword);
+            FetchPasswords();
+            return response.Success;
         }
 
         #endregion

@@ -103,6 +103,7 @@
     <Compile Include="Commands\AbstractCommand.cs" />
     <Compile Include="Commands\DelegateCommand.cs" />
     <Compile Include="Commands\Exit.cs" />
+    <Compile Include="Commands\NewPassword.cs" />
     <Compile Include="Commands\ShowOptions.cs" />
     <Compile Include="Conf.cs" />
     <Compile Include="Utilities\ExtraDataToImageConverter.cs" />
@@ -111,6 +112,10 @@
       <DependentUpon>LoginView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Views\LoginViewModel.cs" />
+    <Compile Include="Views\NewPasswordView.xaml.cs">
+      <DependentUpon>NewPasswordView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\NewPasswordViewModel.cs" />
     <Compile Include="Views\OptionsView.xaml.cs">
       <DependentUpon>OptionsView.xaml</DependentUpon>
     </Compile>
@@ -131,6 +136,10 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Views\LoginView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\NewPasswordView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
