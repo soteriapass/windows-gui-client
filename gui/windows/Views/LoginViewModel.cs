@@ -1,5 +1,6 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
+using System.Windows.Input;
 
 namespace PasswordManager
 {
@@ -27,6 +28,19 @@ namespace PasswordManager
         public string Username
         {
             get { return _Model.Username; }
+            set
+            {
+                if(_Model.Username != value)
+                {
+                    _Model.Username = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public ICommand OKCommand
+        {
+            get { return new DelegateCommand(delegate { _View.DialogResult = true; _View.Close(); }); }
         }
 
         #endregion

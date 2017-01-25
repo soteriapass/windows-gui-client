@@ -5,14 +5,30 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PasswordManager"
         mc:Ignorable="d"
-        Title="MainWindow" Height="350" Width="525">
+        Title="Password Manager" Height="350" Width="525">
     <Grid>
-        <Menu>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="23"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="23"/>
+        </Grid.RowDefinitions>
+        <Menu Grid.Row="0">
             <MenuItem Header="File">
                 <MenuItem Header="Options" Command="{Binding ShowOptions}"/>
                 <Separator/>
                 <MenuItem Header="Exit" Command="{Binding Exit}"/>
             </MenuItem>
         </Menu>
+        <StatusBar Grid.Row="2">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" Text="{Binding ConnectedStatus}"/>
+            </Grid>
+        </StatusBar>
     </Grid>
 </Window>

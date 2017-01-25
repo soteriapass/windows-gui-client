@@ -1,16 +1,21 @@
 ﻿using Grpc.Core;
 using Pswmgr;
+using System.ComponentModel;
 using System.IO;
+using System.Runtime.CompilerServices;
+using System.Windows;
 using System.Windows.Input;
 
 namespace PasswordManager
 {
-    class MainViewModel
+    class MainViewModel : INotifyPropertyChanged
     {
         #region Variables
 
         private readonly MainView _View;
         private readonly Conf _Model;
+
+        private string _ConnectedStatus;
 
         #endregion
 
@@ -21,7 +26,9 @@ namespace PasswordManager
             _View = view;
             _Model = App.Instance.Conf;
 
-            Authenticate();
+            _ConnectedStatus = "Disconnected";
+
+            Authenticate(null);
         }
 
         #endregion
@@ -38,11 +45,29 @@ namespace PasswordManager
             get { return new ExitCommand(); }
         }
 
+        public string ConnectedStatus
+        {
+            get { return _ConnectedStatus; }
+            private set
+            {
+                if(_ConnectedStatus != value)
+                {
+                    _ConnectedStatus = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         #endregion
 
         #region Methods
 
-        public async void Authenticate()
+        public void Authenticate()
+        {
+            Authenticate(_View);
+        }
+
+        private void Authenticate(Window parentView)
         {
             if (!_Model.IsValid())
                 return;
@@ -50,9 +75,11 @@ namespace PasswordManager
             if (!File.Exists(_Model.ServerCertificate))
                 return;
 
+            ConnectedStatus = "Connecting";
+
             string rootCertificate = File.ReadAllText(_Model.ServerCertificate);
 
-            var creds = new SslCredentials();
+            var creds = new SslCredentials(rootCertificate);
             Channel channel = new Channel(_Model.AuthenticationChannel, creds);
 
             AuthenticationRequest request = new AuthenticationRequest();
@@ -62,7 +89,7 @@ namespace PasswordManager
             {
                 LoginView view = new LoginView()
                 {
-                    Owner = _View
+                    Owner = parentView
                 };
                 if (view.ShowDialog() == true)
                 {
@@ -71,7 +98,20 @@ namespace PasswordManager
                 }
             }
 
-            await client.AuthenticateAsync(request);
+            var result =  client.Authenticate(request);
+
+            ConnectedStatus = "Authenticated";
+        }
+
+        #endregion
+
+        #region Events
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string propertyName = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
 
         #endregion

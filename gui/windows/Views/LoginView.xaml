@@ -30,6 +30,6 @@
         <TextBlock Grid.Row="4" Grid.Column="1" Text="Password:"/>
         <PasswordBox Grid.Row="4" Grid.Column="4" Grid.ColumnSpan="2" PasswordChanged="PasswordBox_PasswordChanged" Width="269"/>
 
-        <Button Grid.Row="6" Grid.Column="5">Login</Button>
+        <Button Grid.Row="6" Grid.Column="5" Command="{Binding OKCommand}">Login</Button>
     </Grid>
 </Window>
