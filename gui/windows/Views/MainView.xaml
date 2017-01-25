@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PasswordManager"
+        xmlns:pswmgr="clr-namespace:Pswmgr"
         mc:Ignorable="d"
         Title="Password Manager" Height="350" Width="525" Icon="/PasswordManager;component/Resources/locked.ico">
     <Grid>
@@ -19,6 +20,63 @@
                 <MenuItem Header="Exit" Command="{Binding Exit}"/>
             </MenuItem>
         </Menu>
+
+        <ListView Grid.Row="1" ItemsSource="{Binding Passwords}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch">
+            <ListView.Resources>
+                <local:StringToHiddenStringConverter x:Key="StringConverter"/>
+                <local:ExtraDataToImageConverter x:Key="ImageConverter"/>
+            </ListView.Resources>
+            <ListView.ItemTemplate>
+                <DataTemplate DataType="pswmgr:PasswordEntry">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid Grid.Column="0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="32"/>
+                                <ColumnDefinition Width="10"/>
+                            </Grid.ColumnDefinitions>
+                            <Image Grid.Column="1" Source="{Binding Extra, Converter={StaticResource ImageConverter}}"/>
+                        </Grid>
+                        <Grid Grid.Column="1" VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto"/>
+                                <ColumnDefinition Width="10"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="5"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="5"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Column="0" Grid.Row="0" Text="Account Name"/>
+                            <TextBlock Grid.Column="2" Grid.Row="0" Text="{Binding AccountName}"/>
+
+                            <TextBlock Grid.Column="0" Grid.Row="2" Text="User Name"/>
+                            <TextBlock Grid.Column="2" Grid.Row="2" Text="{Binding Username}"/>
+
+                            <TextBlock Grid.Column="0" Grid.Row="4" Text="Password"/>
+                            <TextBlock Grid.Column="2" Grid.Row="4" Text="{Binding Password, Converter={StaticResource StringConverter}}"/>
+                        </Grid>
+                    </Grid>
+                </DataTemplate>
+            </ListView.ItemTemplate>
+            <ListView.ItemContainerStyle>
+                <Style TargetType="ListViewItem">
+                    <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+                </Style>
+            </ListView.ItemContainerStyle>
+        </ListView>
+        
         <StatusBar Grid.Row="2">
             <Grid>
                 <Grid.ColumnDefinitions>
