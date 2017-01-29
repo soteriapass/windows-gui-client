@@ -6,17 +6,6 @@
 
 #include "log.h"
 
-static int GenericCallback(void*, int argc, char** argv, char** azColName)
-{
-    for(int i = 0; i < argc; ++i)
-    {
-        std::string param = argv[i] ? argv[i] : "NULL";
-        std::cerr << azColName[i] << " = " << param << std::endl;
-    }
-    std::cerr << std::endl;
-    return 0;
-}
-
 bool sqlite_db::Init(conf& conf_file)
 {
     logging::log("sqlite_db::Init", true);
@@ -28,22 +17,34 @@ bool sqlite_db::Init(conf& conf_file)
     if(rc != SQLITE_OK)
     {
         std::cerr << "Can't open database: " << sqlite3_errmsg(m_Database) << std::endl;
+        sqlite3_free(err);
         return false;
     }
 
     const std::string create_user_table_sql = "CREATE TABLE IF NOT EXISTS USERS(ID INT PRIMARY KEY NOT NULL, USERNAME TEXT NOT NULL, PASSWORD CHAR(64) NOT NULL, SALT CHAR(16) NOT NULL, ITERATIONS INT NOT NULL, ADMIN BOOLEAN NOT NULL);";
-    rc = sqlite3_exec(m_Database, create_user_table_sql.c_str(), GenericCallback, nullptr, &err);
+    rc = sqlite3_exec(m_Database, create_user_table_sql.c_str(), nullptr, nullptr, &err);
     if(rc != SQLITE_OK)
     {
         std::cerr << "Can't create users table: " << err << std::endl;
+        sqlite3_free(err);
         return false;
     }
 
     const std::string create_pswd_table_sql = "CREATE TABLE IF NOT EXISTS PASSWORDS(ID INT PRIMARY KEY NOT NULL, USER_ID INT NOT NULL, ACCOUNT_NAME VARCHAR(512) NOT NULL, USERNAME VARCHAR(512) NOT NULL, PASSWORD VARCHAR(512) NOT NULL, EXTRA VARCHAR(512) NOT NULL);";
-    rc = sqlite3_exec(m_Database, create_pswd_table_sql.c_str(), GenericCallback, nullptr, &err);
+    rc = sqlite3_exec(m_Database, create_pswd_table_sql.c_str(), nullptr, nullptr, &err);
     if(rc != SQLITE_OK)
     {
         std::cerr << "Can't create passwords table: " << err << std::endl;
+        sqlite3_free(err);
+        return false;
+    }
+
+    const std::string create_tfa_table_sql = "CREATE TABLE IF NOT EXISTS TFA(USER_ID INT PRIMARY KEY NOT NULL, SECRET_KEY VARCHAR(26) NOT NULL, SCRATCH1 INT, SCRATCH2 INT, SCRATCH3 INT, SCRATCH4 INT, SCRATCH5 INT, SCRATCH6);";
+    rc = sqlite3_exec(m_Database, create_tfa_table_sql.c_str(), nullptr, nullptr, &err);
+    if(rc != SQLITE_OK)
+    {
+        std::cerr << "Can't create two factor authentication table: " << err << std::endl;
+        sqlite3_free(err);
         return false;
     }
 
@@ -68,6 +69,7 @@ int sqlite_db::GetUserCount() const
     if( rc != SQLITE_OK )
     {
         std::cerr << "sql error: " << err << std::endl;
+        sqlite3_free(err);
         return -1;
     }
     return userCount;
@@ -81,7 +83,28 @@ bool sqlite_db::InsertUser(int id, const std::string& username, const std::strin
     insert_sql << "VALUES (" << id << ",'" << username << "','" << password << "','" << salt << "'," << iterations << "," << admin << ")";
 
     char* err = nullptr;
-    int rc = sqlite3_exec(m_Database, insert_sql.str().c_str(), GenericCallback, 0, &err);
+    int rc = sqlite3_exec(m_Database, insert_sql.str().c_str(), nullptr, nullptr, &err);
+    if( rc != SQLITE_OK )
+    {
+        std::cerr << "(sqlite3 error) " << err << std::endl;
+        sqlite3_free(err);
+        return false;
+    }
+    return true;
+}
+
+bool sqlite_db::Insert2FA(int id, const std::string& secret, int* scratchCodes, int scratchCodeCount)
+{
+    if(scratchCodeCount != 6)
+        return false;
+
+    logging::log("sqlite_db::Insert2FA", true);
+    std::stringstream insert_sql;
+    insert_sql << "INSERT INTO TFA(USER_ID, SECRET_KEY, SCRATCH1, SCRATCH2, SCRATCH3, SCRATCH4, SCRATCH5, SCRATCH6)";
+    insert_sql << " VALUES (" << id << ",'" << secret << "'," << scratchCodes[0] << "," << scratchCodes[1] << "," << scratchCodes[2] << "," << scratchCodes[3] << "," << scratchCodes[4] << "," << scratchCodes[5] << ")";
+
+    char* err = nullptr;
+    int rc = sqlite3_exec(m_Database, insert_sql.str().c_str(), nullptr, nullptr, &err);
     if( rc != SQLITE_OK )
     {
         std::cerr << "(sqlite3 error) " << err << std::endl;

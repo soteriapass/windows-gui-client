@@ -17,14 +17,17 @@ PasswordManagerServer::PasswordManagerServer()
 : m_IsRunning(false)
 , m_Database(nullptr)
 {
+    logging::log("PasswordManagerServer::PasswordManagerServer", true);
 }
 
 PasswordManagerServer::~PasswordManagerServer()
 {
+    logging::log("PasswordManagerServer::~PasswordManagerServer", true);
 }
 
 grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, const pswmgr::AuthenticationRequest* request, pswmgr::AuthReply* response)
 {
+    logging::log("PasswordManagerServer::Authenticate", true);
     //First check to see if there are any users
     //I f there are none then we can simply say whatever the resul
     //The authentication has succeeded
@@ -71,6 +74,7 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
 
 grpc::Status PasswordManagerServer::ListPasswords(grpc::ServerContext* context, const pswmgr::SimpleRequest* request, pswmgr::PasswordList* response)
 {
+    logging::log("PasswordManagerServer::ListPasswords", true);
     if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
@@ -132,6 +136,7 @@ grpc::Status PasswordManagerServer::AddPassword(grpc::ServerContext* context, co
 
 grpc::Status PasswordManagerServer::DeletePassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response)
 {
+    logging::log("PasswordManagerServer::DeletePassword", true);
     if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
@@ -157,6 +162,7 @@ grpc::Status PasswordManagerServer::DeletePassword(grpc::ServerContext* context,
 
 grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response)
 {
+    logging::log("PasswordManagerServer::ModifyPassword", true);
     if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
@@ -180,8 +186,9 @@ grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context,
     return grpc::Status::OK;
 }
 
-grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::SimpleReply* response)
+grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::UserCreationReply* response)
 {
+    logging::log("PasswordManagerServer::CreateUser", true);
     if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
     {
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
@@ -189,11 +196,60 @@ grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, con
 
     std::string salt = encryption::GetNewSalt(16);
     std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
-    if(m_Database->InsertUser(m_Database->GetUserCount()+1, request->username(), hashedPassword, salt, 10000, true))
+    const int userId = m_Database->GetUserCount() + 1;
+    if(m_Database->InsertUser(userId, request->username(), hashedPassword, salt, 10000, true))
     {
         response->set_success(true);
+        if(request->add_2fa())
+        {
+            //TODO: FIX THIS, because a random salt is not a valid secret key
+            std::string tfaSecret = encryption::GetNewSalt(26);
+            int scratchCodes[] = 
+            { 
+                encryption::GenerateScratchCode(),
+                encryption::GenerateScratchCode(),
+                encryption::GenerateScratchCode(),
+                encryption::GenerateScratchCode(),
+                encryption::GenerateScratchCode(),
+                encryption::GenerateScratchCode()
+            };
+            if(!m_Database->Insert2FA(userId, tfaSecret, scratchCodes, sizeof(scratchCodes)/sizeof(int)))
+            {
+                response->set_success(false);
+                return grpc::Status(grpc::StatusCode::UNKNOWN, "Database error");
+            }
+            response->set_secret(tfaSecret);
+            for(int i = 0; i < sizeof(scratchCodes)/sizeof(int); ++i)
+            {
+                response->add_scratch_codes(scratchCodes[i]);
+            }
+            //Generate the qrcode with qrencode
+            std::stringstream ss;
+            ss << "qrencode -d 300 \"otpauth://totp/pswmgr(mfilion)?secret=" << tfaSecret << "\" -o qrcode.png";
+            system(ss.str().c_str());
+            logging::log(ss.str(), true);
+
+            std::ifstream qrcode;
+            qrcode.open("qrcode.png", std::ios::in | std::ios::binary);
+            if(qrcode.is_open())
+            {
+                qrcode.seekg (0, std::ios::end);
+                auto size = qrcode.tellg();
+                char* memblock = new char [size];
+                qrcode.seekg (0, std::ios::beg);
+                qrcode.read (memblock, size);
+                qrcode.close();
+                response->set_qrcode(memblock, size);
+            }
+            else
+            {
+                logging::log("Was unable to open qrcode.png", true);
+            }
+        }
+        return grpc::Status::OK;
     }
-    return grpc::Status::OK;
+
+    return grpc::Status(grpc::StatusCode::UNKNOWN, "Database error");
 }
 
 PasswordManagerServer* PasswordManagerServer::Instance()
@@ -287,7 +343,19 @@ bool PasswordManagerServer::Run(conf& conf_file)
         passwordServer = builder.BuildAndStart();
         std::cout << "Password server listening on " << server_address << std::endl;
     }
-    
+
+    if(!conf_file.get_user_server_certificate_file().empty())
+    {
+        std::ifstream file(conf_file.get_user_server_certificate_file(), std::ifstream::in);
+        cert = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    }
+
+    if(!conf_file.get_server_key_file().empty())
+    {
+        std::ifstream file(conf_file.get_user_server_key_file(), std::ifstream::in);
+        key = std::string(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
+    }
+ 
     std::unique_ptr<grpc::Server> userMgmtServer;
     {
         const std::string server_address(conf_file.get_user_mangement_address_and_port());

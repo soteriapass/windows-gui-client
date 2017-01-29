@@ -50,3 +50,6 @@ easy-rsa
 
 # Linux files
 *.swp
+
+# Image files
+*.png

@@ -14,4 +14,5 @@ namespace encryption
     std::string GenerateNewAuthToken(const std::string& reference);
     int ComputeCode(const uint8_t* secret, int secretLen, unsigned long value);
     bool CheckTimebasedCode(const std::string& secretKey, const int code, int window = 17);
+    int GenerateScratchCode();
 }

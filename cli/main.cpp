@@ -44,6 +44,7 @@ bool add_user(PasswordManagerClient& client, const std::string& new_user)
             std::cerr << client.GetLastError() << std::endl;
             return false;
         }
+        std::cout << "user " << new_user << " created successfully" << std::endl;
     }
     return true;
 }
@@ -147,6 +148,8 @@ int main(int argc, char** argv)
         if(strcmp(argv[i], "-add_user") == 0 || strcmp(argv[i], "-a") == 0) 
         {
             actions.push_back(ACTION_ADDUSER);
+            if(i+1 < argc)
+                new_user = argv[i+1];
         }
         else if(strcmp(argv[i], "-login") == 0 || strcmp(argv[i], "-l") == 0)
         {
@@ -156,11 +159,6 @@ int main(int argc, char** argv)
         {
             if(i+1 < argc)
                 user = argv[i+1];
-        }
-        else if(strcmp(argv[i], "-new_user") == 0)
-        {
-            if(i+1 < argc)
-                new_user = argv[i+1];
         }
         else if(strcmp(argv[i], "-new_password") == 0)
         {

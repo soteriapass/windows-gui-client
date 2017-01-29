@@ -17,7 +17,7 @@ service PasswordManager
 
 service UserManagement 
 {
-    rpc CreateUser (UserCreationRequest) returns (SimpleReply) {}
+    rpc CreateUser (UserCreationRequest) returns (UserCreationReply) {}
 }
 
 message AuthenticationRequest 
@@ -31,6 +31,15 @@ message UserCreationRequest
     string username = 1;
     string password = 2;
     bool admin = 3;
+    bool add_2fa = 4;
+}
+
+message UserCreationReply
+{
+    bool success = 1;
+    string secret = 2;
+    bytes qrcode = 3;
+    repeated int32 scratch_codes = 4;
 }
 
 message SimpleRequest

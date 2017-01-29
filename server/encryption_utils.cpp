@@ -15,6 +15,7 @@ namespace encryption
     std::random_device rd;
     std::mt19937 e{rd()};;
     std::uniform_int_distribution<unsigned char> dist{1, std::numeric_limits<unsigned char>::max()};
+    std::uniform_int_distribution<unsigned int> distScratch{10000000, 99999999};
 
     std::string HashAndSalt(const char* pass, const unsigned char *salt, int iterations, int outputBytes)
     {
@@ -131,5 +132,10 @@ namespace encryption
         }
 
         return false;
+    }
+
+    int GenerateScratchCode()
+    {
+        return distScratch(e);
     }
 }

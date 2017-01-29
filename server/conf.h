@@ -16,6 +16,8 @@ public:
     const std::string get_password_manager_address_and_port() const;
     const std::string get_server_certificate_file() const { std::string value; get_key_value("ServerCertificate", value); return value; }
     const std::string get_server_key_file() const { std::string value; get_key_value("ServerKey", value); return value; }
+    const std::string get_user_server_certificate_file() const { std::string value; get_key_value("UserServerCertificate", value); return value; }
+    const std::string get_user_server_key_file() const { std::string value; get_key_value("UserServerKey", value); return value; }
     const std::string get_server_ca_file() const { std::string value; get_key_value("ServerCA", value); return value; }
 
     bool get_key_value(const std::string& key, std::string& value) const

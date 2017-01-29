@@ -37,7 +37,7 @@ private:
     grpc::Status ModifyPassword(grpc::ServerContext* context, const pswmgr::PasswordEntry* request, pswmgr::SimpleReply* response) override;
 
     // User Management Service
-    grpc::Status CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::SimpleReply* response) override;
+    grpc::Status CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::UserCreationReply* response) override;
 
 private:
     static PasswordManagerServer* ms_Instance;

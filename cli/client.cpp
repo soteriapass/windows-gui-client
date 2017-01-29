@@ -43,8 +43,9 @@ bool PasswordManagerClient::CreateUser(const std::string& user, const std::strin
     pswmgr::UserCreationRequest request;
     request.set_username(user);
     request.set_password(pass);
+    request.set_add_2fa(true);
 
-    pswmgr::SimpleReply response;
+    pswmgr::UserCreationReply response;
 
     grpc::Status status = m_UserMgrStub->CreateUser(&context, request, &response);
     if(!status.ok())
@@ -55,10 +56,23 @@ bool PasswordManagerClient::CreateUser(const std::string& user, const std::strin
 
     if(!response.success())
     {
-        m_LastError = "Uknown";
+        m_LastError = "Unknown";
         return false;
     }
 
+    std::cout << " 2fa secret: " << response.secret() << std::endl;
+    for(int i = 0; i < response.scratch_codes_size(); ++i)
+    {
+        std::cout << " Scratch code: " << response.scratch_codes(i) << std::endl;
+    }
+
+    std::cout << response.qrcode().size() << std::endl;
+    std::ofstream qrcode("qrcode.png", std::ios::out | std::ios::binary);
+    if(qrcode.is_open())
+    {
+        qrcode.write(response.qrcode().c_str(), response.qrcode().size());
+        qrcode.close();
+    }
     return true;
 }
 
