@@ -1,6 +1,0 @@
-[submodule "extern/tinyxml2"]
-	path = extern/tinyxml2
-	url = https://github.com/leethomason/tinyxml2
-[submodule "extern/openssl"]
-	path = extern/openssl
-	url = https://github.com/openssl/openssl
