@@ -55,6 +55,26 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
     std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
     if(m_Database->ValidPasswordForUser(request->username(), hashedPassword))
     {
+        int userId = m_Database->GetUserId(request->username());
+        std::string secretToken;
+        if(m_Database->Get2FA(userId, secretToken))
+        {
+            if(request->tfa_token() == 0)
+            {
+                logging::log("No 2FA Token received", true);
+                response->set_token_needed_for_2fa(true);
+                return grpc::Status(grpc::StatusCode::OK, "Need 2FA Token");
+            }
+            else if(request->tfa_token() != 0 && !encryption::CheckTimebasedCode(secretToken, request->tfa_token()))
+            {
+                logging::log(secretToken, true);
+                std::cout << request->tfa_token() << std::endl;
+                logging::log("Invalid 2FA Token received", true);
+                response->set_token_needed_for_2fa(true);
+                return grpc::Status(grpc::StatusCode::OK, "Invalid 2FA Token");
+            }
+        }
+
         response->set_success(true);
         auto iter = m_AuthTokens.find(request->username());
         if(iter == m_AuthTokens.end())
@@ -202,24 +222,19 @@ grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, con
         response->set_success(true);
         if(request->add_2fa())
         {
-            //TODO: FIX THIS, because a random salt is not a valid secret key
-            std::string tfaSecret = encryption::GetNewSalt(26);
-            int scratchCodes[] = 
-            { 
-                encryption::GenerateScratchCode(),
-                encryption::GenerateScratchCode(),
-                encryption::GenerateScratchCode(),
-                encryption::GenerateScratchCode(),
-                encryption::GenerateScratchCode(),
-                encryption::GenerateScratchCode()
-            };
-            if(!m_Database->Insert2FA(userId, tfaSecret, scratchCodes, sizeof(scratchCodes)/sizeof(int)))
+            std::string tfaSecret;
+            std::vector<int> scratchCodes;
+            if(!encryption::GetNewTOTPSecret(tfaSecret, scratchCodes))
+            {
+                return grpc::Status(grpc::StatusCode::UNKNOWN, "totp generation error");
+            }
+            if(!m_Database->Insert2FA(userId, tfaSecret, scratchCodes))
             {
                 response->set_success(false);
                 return grpc::Status(grpc::StatusCode::UNKNOWN, "Database error");
             }
             response->set_secret(tfaSecret);
-            for(int i = 0; i < sizeof(scratchCodes)/sizeof(int); ++i)
+            for(int i = 0; i < scratchCodes.size(); ++i)
             {
                 response->add_scratch_codes(scratchCodes[i]);
             }
@@ -227,7 +242,6 @@ grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, con
             std::stringstream ss;
             ss << "qrencode -d 300 \"otpauth://totp/pswmgr(mfilion)?secret=" << tfaSecret << "\" -o qrcode.png";
             system(ss.str().c_str());
-            logging::log(ss.str(), true);
 
             std::ifstream qrcode;
             qrcode.open("qrcode.png", std::ios::in | std::ios::binary);

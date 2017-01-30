@@ -7,7 +7,7 @@ PasswordManagerClient::PasswordManagerClient(conf& conf_file, std::shared_ptr<gr
 {
 }
 
-bool PasswordManagerClient::Authenticate(const std::string& user, const std::string& pass, bool createUser)
+bool PasswordManagerClient::Authenticate(const std::string& user, const std::string& pass, const std::string& token, bool& need2fa, bool createUser)
 {
     grpc::ClientContext context;
     pswmgr::AuthenticationRequest request;
@@ -15,6 +15,12 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
     request.set_password(pass);
 
     pswmgr::AuthReply response;
+
+    if(token.size() != 0 && need2fa)
+    {
+        int tfa_token = atoi(token.c_str());
+        request.set_tfa_token(tfa_token);
+    }
 
     grpc::Status status = m_AuthStub->Authenticate(&context, request, &response);
     if(status.error_code() == grpc::StatusCode::UNAUTHENTICATED)
@@ -28,6 +34,13 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
         return false;
     }
 
+    if(response.token_needed_for_2fa())
+    {
+        m_LastError = status.error_message();
+        need2fa = response.token_needed_for_2fa();
+        return false;
+    }
+
     m_TokenAuth = new TokenAuthenticator(response.token());
 
     auto callCreds = grpc::MetadataCredentialsFromPlugin(std::unique_ptr<grpc::MetadataCredentialsPlugin>(m_TokenAuth));
@@ -37,7 +50,7 @@ bool PasswordManagerClient::Authenticate(const std::string& user, const std::str
     return true;
 }
 
-bool PasswordManagerClient::CreateUser(const std::string& user, const std::string& pass)
+bool PasswordManagerClient::CreateUser(const std::string& user, const std::string& pass, std::string& tfaSecret, std::vector<int>& scratchCodes, std::string& qrcode)
 {
     grpc::ClientContext context;
     pswmgr::UserCreationRequest request;
@@ -60,19 +73,13 @@ bool PasswordManagerClient::CreateUser(const std::string& user, const std::strin
         return false;
     }
 
-    std::cout << " 2fa secret: " << response.secret() << std::endl;
+    tfaSecret = response.secret();
     for(int i = 0; i < response.scratch_codes_size(); ++i)
     {
-        std::cout << " Scratch code: " << response.scratch_codes(i) << std::endl;
+        scratchCodes.push_back(response.scratch_codes(i));
     }
 
-    std::cout << response.qrcode().size() << std::endl;
-    std::ofstream qrcode("qrcode.png", std::ios::out | std::ios::binary);
-    if(qrcode.is_open())
-    {
-        qrcode.write(response.qrcode().c_str(), response.qrcode().size());
-        qrcode.close();
-    }
+    qrcode = response.qrcode();
     return true;
 }
 

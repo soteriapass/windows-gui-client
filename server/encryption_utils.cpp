@@ -5,10 +5,17 @@
 #include <string.h>
 #include <random>
 #include <chrono>
+#include <iostream>
 
 #include "hmac.h"
 #include "sha1.h"
 #include "base32.h"
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <sys/uio.h>
 
 namespace encryption
 {
@@ -56,6 +63,84 @@ namespace encryption
             ss << dist(e);
         }
         return StringToHex(ss.str());
+    }
+
+    bool GetNewTOTPSecret(std::string& secretKey, std::vector<int>& scratchCodes)
+    {
+        #define SECRET_BITS               128         // Must be divisible by eight
+        #define VERIFICATION_CODE_MODULUS (1000*1000) // Six digits
+        #define SCRATCHCODES              5           // Number of initial scratchcodes
+        #define SCRATCHCODE_LENGTH        8           // Eight digits per scratchcode
+        #define BYTES_PER_SCRATCHCODE     4           // 32bit of randomness is enough
+        #define BITS_PER_BASE32_CHAR      5           // Base32 expands space by 8/5
+
+        static const char hotp[]      = "\" HOTP_COUNTER 1\n";
+        static const char totp[]      = "\" TOTP_AUTH\n";
+        static const char disallow[]  = "\" DISALLOW_REUSE\n";
+        static const char step[]      = "\" STEP_SIZE 30\n";
+        static const char window[]    = "\" WINDOW_SIZE 17\n";
+        static const char ratelimit[] = "\" RATE_LIMIT 3 30\n";
+        char secret[(SECRET_BITS + BITS_PER_BASE32_CHAR-1)/BITS_PER_BASE32_CHAR +
+                  1 /* newline */ +
+                  sizeof(hotp) +  // hotp and totp are mutually exclusive.
+                  sizeof(disallow) +
+                  sizeof(step) +
+                  sizeof(window) +
+                  sizeof(ratelimit) + 5 + // NN MMM (total of five digits)
+                  SCRATCHCODE_LENGTH*(SCRATCHCODES + 1 /* newline */) +
+                  1 /* NUL termination character */];
+
+        uint8_t buf[SECRET_BITS/8 + SCRATCHCODES*BYTES_PER_SCRATCHCODE];
+        int fd = open("/dev/urandom", O_RDONLY);
+        if (fd < 0) 
+        {
+            std::cerr << "Failed to open \"/dev/urandom\"";
+            return false;
+        }
+        if (read(fd, buf, sizeof(buf)) != sizeof(buf)) 
+        {
+            std::cerr << "Failed to read from \"/dev/urandom\"";
+            return false;
+        }
+
+        base32_encode(buf, SECRET_BITS/8, (uint8_t *)secret, sizeof(secret));
+        secretKey = { reinterpret_cast<char*>(secret) };
+        
+        for (int i = 0; i < SCRATCHCODES; ++i) 
+        {
+        new_scratch_code:;
+            int scratch = 0;
+            for (int j = 0; j < BYTES_PER_SCRATCHCODE; ++j) 
+            {
+                scratch = 256*scratch + buf[SECRET_BITS/8 + BYTES_PER_SCRATCHCODE*i + j];
+            }
+            int modulus = 1;
+            for (int j = 0; j < SCRATCHCODE_LENGTH; j++) 
+            {
+                modulus *= 10;
+            }
+            scratch = (scratch & 0x7FFFFFFF) % modulus;
+            if (scratch < modulus/10) 
+            {
+                // Make sure that scratch codes are always exactly eight digits. If they
+                // start with a sequence of zeros, just generate a new scratch code.
+                if (read(fd, buf + (SECRET_BITS/8 + BYTES_PER_SCRATCHCODE*i),BYTES_PER_SCRATCHCODE) != BYTES_PER_SCRATCHCODE) 
+                {
+                    std::cerr << "Failed to read from \"/dev/urandom\"";
+                    return false;
+                }
+                goto new_scratch_code;
+            }
+            /*if (!quiet) 
+            {
+                printf("  %08d\n", scratch);
+            }*/
+            snprintf(strrchr(secret, '\000'), sizeof(secret) - strlen(secret), "%08d\n", scratch);
+            scratchCodes.push_back(scratch);
+        }
+
+        close(fd);
+        return true;
     }
 
     std::string GenerateNewAuthToken(const std::string& reference)

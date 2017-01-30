@@ -17,8 +17,8 @@ class PasswordManagerClient final
 public:
     PasswordManagerClient(conf& conf_file, std::shared_ptr<grpc::Channel> channel);
 
-    bool Authenticate(const std::string& user, const std::string& pass, bool create = false);
-    bool CreateUser(const std::string& user, const std::string& pass);
+    bool Authenticate(const std::string& user, const std::string& pass, const std::string& token, bool& need2fa, bool create = false);
+    bool CreateUser(const std::string& user, const std::string& pass, std::string& tfaSecret, std::vector<int>& scratchCodes, std::string& qrcode);
     const std::string& GetLastError() const { return m_LastError; }
 
     bool AddPassword(const std::string& account_name, const std::string& username, const std::string& password, const std::string& extra);

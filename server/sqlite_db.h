@@ -10,10 +10,11 @@ public:
     bool Init(conf& conf_file) override;
     int GetUserCount() const override;
     bool InsertUser(int id, const std::string& username, const std::string& password, const std::string& salt, int iterations, bool admin) override;
-    bool Insert2FA(int id, const std::string& secret, int* scratchCodes, int scratchCodeCount) override;
+    bool Insert2FA(int id, const std::string& secret, std::vector<int> scratchCodes) override;
     bool ValidPasswordForUser(const std::string& username, const std::string& password) override;
     std::string GetSaltForUser(const std::string& username) override;
     int GetUserId(const std::string& username) override;
+    bool Get2FA(int userId, std::string& token) override;
     bool AddPassword(int userId, const std::string& accountName, const std::string& username, const std::string& password, const std::string& extra) override;
     bool DeletePassword(int userId, const std::string& accountName) override;
     bool ModifyPassword(int userId, const std::string& accountName, const std::string& password) override;

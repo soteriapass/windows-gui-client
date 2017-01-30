@@ -38,13 +38,28 @@ bool add_user(PasswordManagerClient& client, const std::string& new_user)
             std::cin >> new_pass_confirm;
         };
 
-        if(!client.CreateUser(new_user, new_pass))
+        std::string secret;
+        std::vector<int> scratch_codes;
+        std::string qrcode;
+        if(!client.CreateUser(new_user, new_pass, secret, scratch_codes, qrcode))
         {
             std::cerr << "Could not create user" << std::endl;
             std::cerr << client.GetLastError() << std::endl;
             return false;
         }
         std::cout << "user " << new_user << " created successfully" << std::endl;
+        std::cout << "  2fa secret: " << secret << std::endl;
+        std::cout << "  Scratch Codes: " << std::endl;
+        for(int i = 0; i < scratch_codes.size(); ++i)
+        {
+            std::cout << "    " << scratch_codes[i] << std::endl;
+        }
+        std::ofstream qrcode_file("qrcode.png", std::ios::out | std::ios::binary);
+        if(qrcode_file.is_open())
+        {
+            qrcode_file.write(qrcode.c_str(), qrcode.size());
+            qrcode_file.close();
+        }
     }
     return true;
 }
@@ -57,10 +72,29 @@ bool login(PasswordManagerClient& client, const std::string& user)
         std::cout << "password for " << user << ":";
         std::cin >> pass;
     }
-    if(!client.Authenticate(user, pass, false))
+    bool need2fa = false;
+    std::string token;
+    if(!client.Authenticate(user, pass, token, need2fa, false))
     {
-        std::cerr << client.GetLastError() << std::endl;
-        return false;
+        bool authenticated = false;
+        if(need2fa)
+        {
+            std::cout << "Auth failed" << std::endl;
+            do
+            {
+                std::cout << "Two factor token: ";
+                std::string token;
+                std::cin >> token;
+                authenticated = client.Authenticate(user, pass, token, need2fa, false);
+            }
+            while(need2fa && !authenticated);
+        }
+
+        if(!authenticated)
+        {
+            std::cerr << client.GetLastError() << std::endl;
+            return false;
+        }
     }
     std::cout << "Authenticated" << std::endl;
     return true;

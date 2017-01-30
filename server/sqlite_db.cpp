@@ -93,15 +93,15 @@ bool sqlite_db::InsertUser(int id, const std::string& username, const std::strin
     return true;
 }
 
-bool sqlite_db::Insert2FA(int id, const std::string& secret, int* scratchCodes, int scratchCodeCount)
+bool sqlite_db::Insert2FA(int id, const std::string& secret, std::vector<int> scratchCodes)
 {
-    if(scratchCodeCount != 6)
+    if(scratchCodes.size() != 5)
         return false;
 
     logging::log("sqlite_db::Insert2FA", true);
     std::stringstream insert_sql;
-    insert_sql << "INSERT INTO TFA(USER_ID, SECRET_KEY, SCRATCH1, SCRATCH2, SCRATCH3, SCRATCH4, SCRATCH5, SCRATCH6)";
-    insert_sql << " VALUES (" << id << ",'" << secret << "'," << scratchCodes[0] << "," << scratchCodes[1] << "," << scratchCodes[2] << "," << scratchCodes[3] << "," << scratchCodes[4] << "," << scratchCodes[5] << ")";
+    insert_sql << "INSERT INTO TFA(USER_ID, SECRET_KEY, SCRATCH1, SCRATCH2, SCRATCH3, SCRATCH4, SCRATCH5)";
+    insert_sql << " VALUES (" << id << ",'" << secret << "'," << scratchCodes[0] << "," << scratchCodes[1] << "," << scratchCodes[2] << "," << scratchCodes[3] << "," << scratchCodes[4] << ")";
 
     char* err = nullptr;
     int rc = sqlite3_exec(m_Database, insert_sql.str().c_str(), nullptr, nullptr, &err);
@@ -200,6 +200,37 @@ int sqlite_db::GetUserId(const std::string& username)
     }
 
     return data;
+}
+
+bool sqlite_db::Get2FA(int userId, std::string& token)
+{
+    logging::log("sqlite_db::Get2FA", true);
+    std::stringstream sql;
+    sql << "SELECT SECRET_KEY FROM TFA WHERE USER_ID == '" << userId << "'";
+
+    auto callbackFunc = [](void* unknown, int argc, char** argv, char** azColName) -> int
+    {
+        if(unknown != nullptr && argc > 0)
+        {
+            char* buffer = reinterpret_cast<char*>(unknown);
+            memcpy(buffer, argv[0], 26);
+        }
+        return 0;
+    };
+
+    char* err = nullptr;
+    char data[27];
+    data[26] = '\0';
+    int rc = sqlite3_exec(m_Database, sql.str().c_str(), callbackFunc, reinterpret_cast<void*>(data), &err);
+    if( rc != SQLITE_OK )
+    {
+        std::cerr << "(sqlite error) " << err << std::endl;
+        sqlite3_free(err);
+        return false;
+    }
+
+    token = { data };
+    return true;
 }
 
 bool sqlite_db::AddPassword(int userId, const std::string& accountName, const std::string& username, const std::string& password, const std::string& extra)
