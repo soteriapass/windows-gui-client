@@ -1,6 +1,4 @@
 # pswmgr
-========
-
 Password Manager that uses a client/server architecture to store encrypted passwords remotely
 
 # Dependencies
@@ -9,14 +7,14 @@ Password Manager that uses a client/server architecture to store encrypted passw
 * [OpenSSL](https://www.openssl.org/)
 * [Sqlite3 (available in repos)](https://sqlite.org/)
 
-# Supported platforms
+### Supported platforms
 
          |  GUI  |  CLI  | Server |
 -------- | ----- | ----- | ------ |
 Linux    |   NO  |__YES__| __YES__|
 Windows  |__YES__|  NO   |   NO   |
 
-# Important notice
+### Important notice
 Currently the storage of passwords is done in plain text. This means that the current implementation is __NOT SECURE__
 
 ### Cryptography Notice
@@ -24,7 +22,6 @@ Currently the storage of passwords is done in plain text. This means that the cu
 This distribution includes cryptographic software. The country in which you currently reside may have restrictions on the import, possession, use, and/or re-export to another country, of encryption software. BEFORE using any encryption software, please check your country's laws, regulations and policies concerning the import, possession, or use, and re-export of encryption software, to see if this is permitted. See [http://www.wassenaar.org/](http://www.wassenaar.org/) for more information.
 
 ### License
-========
 The main license for this project is the GPLv3 - [https://github.com/devgeeks/Encryptr/blob/master/LICENSE](https://github.com/devgeeks/Encryptr/blob/master/LICENSE)
 
 Certain parts of this distribution is licensed under the Apache License [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
