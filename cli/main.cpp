@@ -79,7 +79,6 @@ bool login(PasswordManagerClient& client, const std::string& user)
         bool authenticated = false;
         if(need2fa)
         {
-            std::cout << "Auth failed" << std::endl;
             do
             {
                 std::cout << "Two factor token: ";
