@@ -17,6 +17,9 @@
 #include <unistd.h>
 #include <sys/uio.h>
 
+#include <openssl/rsa.h>
+#include <openssl/pem.h>
+
 namespace encryption
 {
     std::random_device rd;
@@ -222,5 +225,57 @@ namespace encryption
     int GenerateScratchCode()
     {
         return distScratch(e);
+    }
+
+    bool GenerateEncryptionKey(const std::string& out_file, bool generate_public_key, std::string out_public_file)
+    {
+        int ret = 0;
+
+        RSA* rsa = nullptr;
+        const int bits = 2048;
+        const unsigned long e = RSA_F4;
+
+        BIGNUM* bne = nullptr;
+        bne = BN_new();
+        ret = BN_set_word(bne,e);
+        if(ret != 1)
+        {
+            return false;
+        }
+
+        rsa = RSA_new();
+        ret = RSA_generate_key_ex(rsa, bits, bne, NULL);
+        if(ret != 1)
+        {
+            BN_free(bne);
+            RSA_free(rsa);
+            return false;
+        }
+
+        if(generate_public_key)
+        {
+            BIO* bp_public = BIO_new_file(out_public_file.c_str(), "w+");
+            ret = PEM_write_bio_RSAPublicKey(bp_public, rsa);
+            BIO_free_all(bp_public);
+            if(ret != 1)
+            {
+                BN_free(bne);
+                RSA_free(rsa);
+                return false;
+            }
+        }
+
+        BIO* bp_private = BIO_new_file(out_file.c_str(), "w+");
+        ret = PEM_write_bio_RSAPrivateKey(bp_private, rsa, nullptr, nullptr, 0, nullptr, nullptr);
+
+        BIO_free_all(bp_private);
+        BN_free(bne);
+        RSA_free(rsa);
+  
+        if(ret != 1)
+        {
+            return false;
+        }
+        return true;
     }
 }

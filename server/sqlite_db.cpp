@@ -48,6 +48,15 @@ bool sqlite_db::Init(conf& conf_file)
         return false;
     }
 
+    const std::string create_key_table_sql = "CREATE TABLE IF NOT EXISTS KEYS(USER_ID INT PRIMARY KEY NOT NULL, PUBLIC_KEY TEXT NOT NULL, PRIVATE_KEY TEXT NOT NULL);";
+    rc = sqlite3_exec(m_Database, create_key_table_sql.c_str(), nullptr, nullptr, &err);
+    if(rc != SQLITE_OK)
+    {
+        std::cerr << "Can't create encryption keys table: " << err << std::endl;
+        sqlite3_free(err);
+        return false;
+    }
+
     return true;
 }
 
