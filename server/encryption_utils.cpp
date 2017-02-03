@@ -6,6 +6,7 @@
 #include <random>
 #include <chrono>
 #include <iostream>
+#include <fstream>
 
 #include "hmac.h"
 #include "sha1.h"
@@ -19,9 +20,18 @@
 
 #include <openssl/rsa.h>
 #include <openssl/pem.h>
+#include <openssl/err.h>
 
 namespace encryption
 {
+    void PrintLastEncryptionError()
+    {
+        char * err = reinterpret_cast<char*>(malloc(130));
+        ERR_load_crypto_strings();
+        ERR_error_string(ERR_get_error(), err);
+        std::cout << "ERROR: " << err << std::endl; 
+    }
+
     std::random_device rd;
     std::mt19937 e{rd()};;
     std::uniform_int_distribution<unsigned char> dist{1, std::numeric_limits<unsigned char>::max()};
@@ -227,7 +237,7 @@ namespace encryption
         return distScratch(e);
     }
 
-    bool GenerateEncryptionKey(const std::string& out_file, bool generate_public_key, std::string out_public_file)
+    bool GenerateEncryptionKey(std::string& out_key, bool generate_public_key, std::string& out_public_key)
     {
         int ret = 0;
 
@@ -254,9 +264,18 @@ namespace encryption
 
         if(generate_public_key)
         {
-            BIO* bp_public = BIO_new_file(out_public_file.c_str(), "w+");
+            //BIO* bp_public = BIO_new_file(out_public_file.c_str(), "w+");
+            BIO* bp_public = BIO_new(BIO_s_mem());
             ret = PEM_write_bio_RSAPublicKey(bp_public, rsa);
+
+            size_t key_length = BIO_pending(bp_public);
+            char* raw_key = reinterpret_cast<char*>(malloc(key_length + 1));
+            memset(raw_key, 0, key_length + 1);
+            BIO_read(bp_public, raw_key, key_length);
+            out_public_key = { raw_key };
+
             BIO_free_all(bp_public);
+            free(raw_key);
             if(ret != 1)
             {
                 BN_free(bne);
@@ -265,8 +284,14 @@ namespace encryption
             }
         }
 
-        BIO* bp_private = BIO_new_file(out_file.c_str(), "w+");
+        BIO* bp_private = BIO_new(BIO_s_mem());
         ret = PEM_write_bio_RSAPrivateKey(bp_private, rsa, nullptr, nullptr, 0, nullptr, nullptr);
+
+        size_t key_length = BIO_pending(bp_private);
+        char* raw_key = reinterpret_cast<char*>(malloc(key_length + 1));
+        memset(raw_key, 0, key_length + 1);
+        BIO_read(bp_private, raw_key, key_length);
+        out_key = { raw_key };
 
         BIO_free_all(bp_private);
         BN_free(bne);
@@ -276,6 +301,104 @@ namespace encryption
         {
             return false;
         }
+        return true;
+    }
+
+    bool GenerateAndSaveEncryptionKey(const std::string& out_file, bool save_public_key, std::string out_public_file)
+    {
+        std::string privateKey;
+        std::string publicKey;
+        if(GenerateEncryptionKey(privateKey, save_public_key, publicKey))
+        {
+            std::ofstream file;
+            file.open(out_file, std::ios::out | std::ios::binary);
+            if(file.is_open())
+            {
+                file << privateKey;
+                file.close();
+            }
+            if(save_public_key)
+            {
+                file.open(out_public_file, std::ios::out | std::ios::binary);
+                if(file.is_open())
+                {
+                    file << publicKey << std::endl;;
+                    file.close();
+                }
+            }
+        }
+    }
+
+    RSA* CreateRSA(const std::string& key_file, bool public_key)
+    {
+        FILE* fp = fopen(key_file.c_str(), "rb");
+        if(fp == nullptr)
+        {
+            return nullptr;
+        }
+        RSA* rsa = nullptr;
+        if(public_key)
+            rsa = PEM_read_RSA_PUBKEY(fp, &rsa, nullptr, nullptr);
+        else
+            rsa = PEM_read_RSAPrivateKey(fp, &rsa, nullptr, nullptr);
+        if(rsa == nullptr)
+        {
+            PrintLastEncryptionError();
+            RSA_free(rsa);
+            return nullptr;
+        }    
+    }
+
+    bool EncryptString(const std::string& plain_text, unsigned char* encrypted, const std::string& public_key_file)
+    {
+        RSA* rsa = CreateRSA(public_key_file, true);
+
+        size_t size = RSA_size(rsa);
+        char* src = new char[size];
+        //memset(src, 0, unencrypted.size() + 1);
+        //memcpy(src, unencrypted.c_str(), unencrypted.size());
+
+        char plainText[2048/8] = "Hello this is Ravi";
+        auto len = RSA_public_encrypt(plain_text.size(), reinterpret_cast<const unsigned char*>(plain_text.c_str()), encrypted, rsa, RSA_PKCS1_PADDING);
+        if(len == -1)
+        {
+            RSA_free(rsa);
+            PrintLastEncryptionError();
+            return false;
+        }
+
+        RSA_free(rsa);
+
+        return true;
+    }
+
+    bool DecryptString(unsigned char* encrypted, unsigned char* unencrypted, const std::string& private_key_file)
+    {
+        FILE* fp = fopen(private_key_file.c_str(), "rb");
+        if(fp == nullptr)
+        {
+            return false;
+        }
+        RSA* rsa = nullptr;
+        rsa = PEM_read_RSAPrivateKey(fp, &rsa, nullptr, nullptr);
+        if(rsa == nullptr)
+        {
+            PrintLastEncryptionError();
+            RSA_free(rsa);
+            return false;
+        }
+
+        size_t size = RSA_size(rsa);
+        auto len = RSA_private_decrypt(size, encrypted, unencrypted, rsa, RSA_PKCS1_PADDING);
+        if(len == -1)
+        {
+            RSA_free(rsa);
+            PrintLastEncryptionError();
+            return false;
+        }
+
+        RSA_free(rsa);
+        
         return true;
     }
 }
