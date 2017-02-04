@@ -47,4 +47,7 @@ private:
     std::map<std::string, std::shared_ptr<auth_token_info>> m_AuthTokens;
     
     std::shared_ptr<TokenAuthMetadataProcessor> m_TokenAuthMetadataProcessor;
+
+    std::string m_PublicKey;
+    std::string m_PrivateKey;
 };

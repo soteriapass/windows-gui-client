@@ -110,17 +110,32 @@ grpc::Status PasswordManagerServer::ListPasswords(grpc::ServerContext* context, 
     auto authTokenInfo = m_AuthTokens[peerName];
     int userId = m_Database->GetUserId(authTokenInfo->username);
 
+    struct callback_func_cookie_t
+    {
+        pswmgr::PasswordList* response;
+        std::string* private_key_file;
+    };
+
     auto callbackFunc = [](char* account_name, char* username, char* password, char* extra, void* cookie) -> void
     {
-        pswmgr::PasswordList* response = reinterpret_cast<pswmgr::PasswordList*>(cookie);
+        callback_func_cookie_t* callback_cookie = reinterpret_cast<callback_func_cookie_t*>(cookie);
+        pswmgr::PasswordList* response = callback_cookie->response;
         pswmgr::PasswordEntry* entry = response->add_passwords();
         entry->set_account_name({ account_name });
         entry->set_username({ username });
-        entry->set_password({ password });
+std::cout << "asdf" << std::endl;
+        unsigned char decrypted[4098] = { };
+        encryption::DecryptString(reinterpret_cast<unsigned char*>(password), decrypted, *callback_cookie->private_key_file);
+
+        entry->set_password({ reinterpret_cast<char*>(decrypted) });
         entry->set_extra({ extra });
     };
 
-    if(!m_Database->ListPasswords(userId, callbackFunc, response))
+    callback_func_cookie_t cookie;
+    cookie.response = response;
+    cookie.private_key_file = &m_PrivateKey;
+
+    if(!m_Database->ListPasswords(userId, callbackFunc, &cookie))
     {
         return grpc::Status(grpc::StatusCode::UNAVAILABLE, "");
     }
@@ -146,7 +161,10 @@ grpc::Status PasswordManagerServer::AddPassword(grpc::ServerContext* context, co
     auto authTokenInfo = m_AuthTokens[peerName];
     int userId = m_Database->GetUserId(authTokenInfo->username);
 
-    if(!m_Database->AddPassword(userId, request->account_name(), request->username(), request->password(), request->extra()))
+    unsigned char encrypted[4098] = { };
+    encryption::EncryptString(request->password(), encrypted, m_PublicKey);
+
+    if(!m_Database->AddPassword(userId, request->account_name(), request->username(), { reinterpret_cast<char*>(encrypted) }, request->extra()))
     {
         return grpc::Status(grpc::StatusCode::UNKNOWN, "");
     }
@@ -198,7 +216,10 @@ grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context,
     auto authTokenInfo = m_AuthTokens[peerName];
     int userId = m_Database->GetUserId(authTokenInfo->username);
 
-    if(!m_Database->ModifyPassword(userId, request->account_name(), request->password()))
+    unsigned char encrypted[4098] = { };
+    encryption::EncryptString(request->password(), encrypted, m_PublicKey);
+
+    if(!m_Database->ModifyPassword(userId, request->account_name(), { reinterpret_cast<char*>(encrypted) }))
     {
         return grpc::Status(grpc::StatusCode::UNKNOWN, "Unknown error");
     }
@@ -279,6 +300,9 @@ bool PasswordManagerServer::Init(conf& conf_file)
 {
     if(m_Database != nullptr)
         return false;
+
+    m_PublicKey = conf_file.get_public_key_filename();
+    m_PrivateKey = conf_file.get_private_key_filename();
 
     m_Database = new sqlite_db();
     return m_Database->Init(conf_file);
