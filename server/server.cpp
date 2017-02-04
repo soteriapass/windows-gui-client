@@ -55,30 +55,30 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
     std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
     if(m_Database->ValidPasswordForUser(request->username(), hashedPassword))
     {
-        int userId = m_Database->GetUserId(request->username());
-        std::string secretToken;
-        if(m_Database->Get2FA(userId, secretToken))
-        {
-            if(request->tfa_token() == 0)
-            {
-                logging::log("No 2FA Token received", true);
-                response->set_token_needed_for_2fa(true);
-                return grpc::Status(grpc::StatusCode::OK, "Need 2FA Token");
-            }
-            else if(request->tfa_token() != 0 && !encryption::CheckTimebasedCode(secretToken, request->tfa_token()))
-            {
-                logging::log(secretToken, true);
-                std::cout << request->tfa_token() << std::endl;
-                logging::log("Invalid 2FA Token received", true);
-                response->set_token_needed_for_2fa(true);
-                return grpc::Status(grpc::StatusCode::OK, "Invalid 2FA Token");
-            }
-        }
-
-        response->set_success(true);
         auto iter = m_AuthTokens.find(request->username());
         if(iter == m_AuthTokens.end())
         {
+            int userId = m_Database->GetUserId(request->username());
+            std::string secretToken;
+            if(m_Database->Get2FA(userId, secretToken))
+            {
+                if(request->tfa_token() == 0)
+                {
+                    logging::log("No 2FA Token received", true);
+                    response->set_token_needed_for_2fa(true);
+                    return grpc::Status(grpc::StatusCode::OK, "Need 2FA Token");
+                }
+                else if(request->tfa_token() != 0 && !encryption::CheckTimebasedCode(secretToken, request->tfa_token()))
+                {
+                    logging::log(secretToken, true);
+                    std::cout << request->tfa_token() << std::endl;
+                    logging::log("Invalid 2FA Token received", true);
+                    response->set_token_needed_for_2fa(true);
+                    return grpc::Status(grpc::StatusCode::OK, "Invalid 2FA Token");
+                }
+            }
+
+            response->set_success(true);
             auth_token_info* info = new auth_token_info(encryption::GenerateNewAuthToken(request->username()), request->username());
 
             m_AuthTokens[info->token] = std::shared_ptr<auth_token_info>(info);
