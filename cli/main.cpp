@@ -11,6 +11,7 @@
 enum CMD_ACTIONS
 {
     ACTION_ADDUSER,
+    ACTION_MODIFYUSER,
     ACTION_ADDPASSWORD,
     ACTION_AUTHENTICATE,
     ACTION_DELETEPASSWORD,
@@ -61,6 +62,32 @@ bool add_user(PasswordManagerClient& client, const std::string& new_user)
             qrcode_file.close();
         }
     }
+    return true;
+}
+
+bool modify_user(PasswordManagerClient& client, const std::string& user)
+{
+    std::string new_pass;
+    std::string new_pass_confirm;
+    while(new_pass.empty() || new_pass != new_pass_confirm)
+    {
+        std::cout << "new password for " << user << ":";
+        std::cin >> new_pass;
+
+        std::cout << "confirm new password for " << user << ":";
+        std::cin >> new_pass_confirm;
+    };
+
+    std::string secret;
+    std::vector<int> scratch_codes;
+    std::string qrcode;
+    if(!client.UpdateUserPassword(user, new_pass))
+    {
+        std::cerr << "Could not modify user" << std::endl;
+        std::cerr << client.GetLastError() << std::endl;
+        return false;
+    }
+
     return true;
 }
 
@@ -173,6 +200,7 @@ int main(int argc, char** argv)
 
     std::string user;
     std::string new_user;
+    std::string modify_username;
 
     PasswordManagerClient client(conf_file, PasswordManagerClient::GetChannel(conf_file, conf_file.get_authentication_address_and_port()));
 
@@ -192,6 +220,12 @@ int main(int argc, char** argv)
         {
             if(i+1 < argc)
                 user = argv[i+1];
+        }
+        else if(strcmp(argv[i], "-modify_user") == 0)
+        {
+            if(i+1 < argc)
+                modify_username = argv[i+1];
+            actions.push_back(ACTION_MODIFYUSER);
         }
         else if(strcmp(argv[i], "-add_password") == 0)
         {
@@ -231,6 +265,14 @@ int main(int argc, char** argv)
                 }
                 break;
             }
+            case ACTION_MODIFYUSER:
+            {
+                if(!modify_user(client, modify_username))
+                {
+                    return 2;
+                }
+                break;
+            }
             case ACTION_ADDPASSWORD:
             {
                 add_password(client);
@@ -240,7 +282,7 @@ int main(int argc, char** argv)
             {
                 if(!login(client, user))
                 {
-                    return 2;
+                    return 3;
                 }
                 break;
             }
@@ -256,7 +298,7 @@ int main(int argc, char** argv)
             {
                 if(!list_passwords(client))
                 {
-                    return 3;
+                    return 4;
                 }
                 break;
             }
@@ -264,7 +306,7 @@ int main(int argc, char** argv)
             {
                 if(!delete_password(client))
                 {
-                    return 4;
+                    return 5;
                 }       
                 break;
             }
@@ -272,7 +314,7 @@ int main(int argc, char** argv)
             {
                 if(!modify_password(client))
                 {
-                    return 5;
+                    return 6;
                 }
                 break;
             }

@@ -83,6 +83,25 @@ bool PasswordManagerClient::CreateUser(const std::string& user, const std::strin
     return true;
 }
 
+bool PasswordManagerClient::UpdateUserPassword(const std::string& user, const std::string& pass)
+{
+    grpc::ClientContext context;
+    pswmgr::UserPasswordUpdateRequest request;
+    request.set_username(user);
+    request.set_password(pass);
+
+    pswmgr::SimpleReply response;
+
+    grpc::Status status = m_UserMgrStub->UpdateUserPassword(&context, request, &response);
+    if(!status.ok())
+    {
+        m_LastError = status.error_message();
+        return false;
+    }
+
+    return true;
+}
+
 bool PasswordManagerClient::AddPassword(const std::string& account_name, const std::string& username, const std::string& password, const std::string& extra)
 {
     grpc::ClientContext context;
