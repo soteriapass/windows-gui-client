@@ -127,6 +127,7 @@ namespace PasswordManager
                 if (view.ShowDialog() == true)
                 {
                     request.Username = _Model.Username;
+                    request.Password = _Model.Password;
                 }
             }
 
