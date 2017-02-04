@@ -17,10 +17,10 @@ namespace PasswordManager
 
         #region Ctor
 
-        public NewPasswordViewModel(NewPasswordView view)
+        public NewPasswordViewModel(NewPasswordView view, Pswmgr.PasswordEntry entry = null)
         {
             _View = view;
-            _Model = new Pswmgr.PasswordEntry();
+            _Model = entry ?? new Pswmgr.PasswordEntry();
             _OKCommand = new DelegateCommand(OnOk, DataCompleted);
         }
 
@@ -46,6 +46,7 @@ namespace PasswordManager
         internal void OnPasswordBoxPasswordChanged()
         {
             _Model.Password = _View._PasswordBox.Password;
+            _OKCommand.OnCanExecuteChanged();
         }
 
         public string AccountName

@@ -26,6 +26,8 @@ namespace PasswordManager
 
         private readonly ObservableCollection<Pswmgr.PasswordEntry> _Passwords;
 
+        private int _SelectedPasswordIndex;
+
         #endregion
 
         #region Ctor
@@ -38,6 +40,8 @@ namespace PasswordManager
             _ConnectedStatus = "Disconnected";
 
             _Passwords = new ObservableCollection<Pswmgr.PasswordEntry>();
+
+            _SelectedPasswordIndex = -1;
 
             Authenticate(null);
         }
@@ -72,6 +76,16 @@ namespace PasswordManager
             }
         }
 
+        public ICommand Delete
+        {
+            get { return new DelegateCommand(DeletePassword); }
+        }
+
+        public ICommand Modify
+        {
+            get { return new DelegateCommand(ModifyPassword); }
+        }
+
         public string ConnectedStatus
         {
             get { return _ConnectedStatus; }
@@ -88,6 +102,19 @@ namespace PasswordManager
         public ObservableCollection<Pswmgr.PasswordEntry> Passwords
         {
             get { return _Passwords; }
+        }
+
+        public int SelectedPasswordIndex
+        {
+            get { return _SelectedPasswordIndex; }
+            set
+            {
+                if(_SelectedPasswordIndex != value)
+                {
+                    _SelectedPasswordIndex = value;
+                    OnPropertyChanged();
+                }
+            }
         }
 
         #endregion
@@ -191,6 +218,35 @@ namespace PasswordManager
             var response = await _Client.AddPasswordAsync(newPassword);
             FetchPasswords();
             return response.Success;
+        }
+
+        private async void DeletePassword()
+        {
+            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+            await _Client.DeletePasswordAsync(entry);
+            _Passwords.RemoveAt(_SelectedPasswordIndex);
+        }
+
+        private async void ModifyPassword()
+        {
+            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+
+            NewPasswordView passwordView = new NewPasswordView(entry)
+            {
+                Owner = _View
+            };
+            if (passwordView.ShowDialog() == true)
+            {
+                var response = await _Client.ModifyPasswordAsync(entry);
+                if (response.Success)
+                    MessageBox.Show(_View, "Modified password successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+                else
+                    MessageBox.Show(_View, "Problem modifying the password", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+            else
+            {
+                MessageBox.Show(_View, "Modification Cancelled", "Cancelled", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
         }
 
         #endregion

@@ -13,12 +13,14 @@
 
         #region Ctor
 
-        public NewPasswordView()
+        public NewPasswordView(Pswmgr.PasswordEntry entry = null)
         {
-            _ViewModel = new NewPasswordViewModel(this);
+            _ViewModel = new NewPasswordViewModel(this, entry);
             DataContext = _ViewModel;
 
             InitializeComponent();
+
+            _PasswordBox.Password = _ViewModel.Model.Password;
         }
 
         #endregion
@@ -32,9 +34,13 @@
 
         #endregion
 
+        #region Methods
+
         private void PasswordBox_PasswordChanged(object sender, System.Windows.RoutedEventArgs e)
         {
             _ViewModel.OnPasswordBoxPasswordChanged();
         }
+
+        #endregion
     }
 }
