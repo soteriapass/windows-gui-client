@@ -237,6 +237,11 @@ grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, con
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
 
+    if(!IsStrongPassword(request->password()))
+    {
+        return grpc::Status(grpc::StatusCode::UNKNOWN, "Not a strong password");
+    }
+
     std::string salt = encryption::GetNewSalt(16);
     std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
     const int userId = m_Database->GetUserCount() + 1;
@@ -297,7 +302,10 @@ grpc::Status PasswordManagerServer::UpdateUserPassword(grpc::ServerContext* cont
         return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
     }
 
-    
+    if(!IsStrongPassword(request->password()))
+    {
+        return grpc::Status(grpc::StatusCode::UNKNOWN, "Not a strong password");
+    }
 
     int userId = m_Database->GetUserId(request->username());
     const std::string salt = m_Database->GetSaltForUser(request->username());

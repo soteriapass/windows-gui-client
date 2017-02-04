@@ -248,7 +248,7 @@ bool sqlite_db::UpdateUserPassword(int userId, const std::string& hashedPassword
 
     char* err = nullptr;
     std::stringstream update_sql;
-    update_sql << "UPDATE USERS set PASSWORD = '" << hashedPassword << "' WHERE USER_ID == " << userId << ";";
+    update_sql << "UPDATE USERS set PASSWORD = '" << hashedPassword << "' WHERE ID == " << userId << ";";
     int rc = sqlite3_exec(m_Database, update_sql.str().c_str(), nullptr, nullptr, &err);
     if( rc != SQLITE_OK )
     {
