@@ -123,7 +123,7 @@ grpc::Status PasswordManagerServer::ListPasswords(grpc::ServerContext* context, 
         pswmgr::PasswordEntry* entry = response->add_passwords();
         entry->set_account_name({ account_name });
         entry->set_username({ username });
-std::cout << "asdf" << std::endl;
+
         unsigned char decrypted[4098] = { };
         encryption::DecryptString(reinterpret_cast<unsigned char*>(password), decrypted, *callback_cookie->private_key_file);
 
@@ -162,9 +162,10 @@ grpc::Status PasswordManagerServer::AddPassword(grpc::ServerContext* context, co
     int userId = m_Database->GetUserId(authTokenInfo->username);
 
     unsigned char encrypted[4098] = { };
-    encryption::EncryptString(request->password(), encrypted, m_PublicKey);
+    int enc_len;
+    encryption::EncryptString(request->password(), encrypted, enc_len, m_PublicKey);
 
-    if(!m_Database->AddPassword(userId, request->account_name(), request->username(), { reinterpret_cast<char*>(encrypted) }, request->extra()))
+    if(!m_Database->AddPassword(userId, request->account_name(), request->username(), reinterpret_cast<char*>(encrypted), enc_len, request->extra()))
     {
         return grpc::Status(grpc::StatusCode::UNKNOWN, "");
     }
@@ -217,7 +218,8 @@ grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context,
     int userId = m_Database->GetUserId(authTokenInfo->username);
 
     unsigned char encrypted[4098] = { };
-    encryption::EncryptString(request->password(), encrypted, m_PublicKey);
+    int enc_len;
+    encryption::EncryptString(request->password(), encrypted, enc_len, m_PublicKey);
 
     if(!m_Database->ModifyPassword(userId, request->account_name(), { reinterpret_cast<char*>(encrypted) }))
     {

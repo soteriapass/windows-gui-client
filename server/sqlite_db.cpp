@@ -265,6 +265,39 @@ bool sqlite_db::AddPassword(int userId, const std::string& accountName, const st
 
 bool sqlite_db::AddPassword(int userId, const std::string& accountName, const std::string& username, const char* enc_password, int enc_length, const std::string& extra)
 {
+    logging::log("sqlite_db::AddPassword2", true);
+    int id = GetPasswordEntryCount()+1;
+    std::stringstream insert_sql;
+    insert_sql << "INSERT INTO PASSWORDS(ID, USER_ID, ACCOUNT_NAME, USERNAME, PASSWORD, EXTRA) ";
+    insert_sql << "VALUES (" << id << ","<< userId << ",'" << accountName << "','" << username << "',?,'" << extra << "')";
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_Database, insert_sql.str().c_str(), -1, &stmt, nullptr);
+    if( rc != SQLITE_OK )
+    {
+        sqlite3_finalize(stmt);
+        std::cerr << "(sqlite error) " << sqlite3_errmsg(m_Database) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_bind_blob(stmt, 1, enc_password, enc_length, SQLITE_STATIC);
+    if( rc != SQLITE_OK )
+    {
+        sqlite3_finalize(stmt);
+        std::cerr << "(sqlite error) " << sqlite3_errmsg(m_Database) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_step(stmt);
+    if ( rc != SQLITE_DONE )
+    {
+        sqlite3_finalize(stmt);
+        std::cerr << "(sqlite execution failed) " << sqlite3_errmsg(m_Database) << std::endl;
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
+
     return true;
 }
 
