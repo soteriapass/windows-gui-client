@@ -20,6 +20,7 @@ public:
 
     //Password access
     virtual bool AddPassword(int userId, const std::string& accountName, const std::string& username, const std::string& password, const std::string& extra) = 0;
+    virtual bool AddPassword(int userId, const std::string& accountName, const std::string& username, const char* enc_password, int enc_length, const std::string& extra) = 0;
     virtual bool DeletePassword(int userId, const std::string& accountName) = 0;
     virtual bool ModifyPassword(int userId, const std::string& accountName, const std::string& password) = 0;
     virtual bool ListPasswords(int userId, void (*add_callback)(char*,char*,char*,char*,void*), void* cookie) = 0;

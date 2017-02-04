@@ -263,6 +263,11 @@ bool sqlite_db::AddPassword(int userId, const std::string& accountName, const st
     return true;
 }
 
+bool sqlite_db::AddPassword(int userId, const std::string& accountName, const std::string& username, const char* enc_password, int enc_length, const std::string& extra)
+{
+    return true;
+}
+
 int sqlite_db::GetPasswordEntryCount() const
 {
     logging::log("sqlite_db::GetPasswordEntryCount", true);
