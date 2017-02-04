@@ -193,7 +193,7 @@ int main(int argc, char** argv)
             if(i+1 < argc)
                 user = argv[i+1];
         }
-        else if(strcmp(argv[i], "-new_password") == 0)
+        else if(strcmp(argv[i], "-add_password") == 0)
         {
             actions.push_back(ACTION_ADDPASSWORD);
         }
