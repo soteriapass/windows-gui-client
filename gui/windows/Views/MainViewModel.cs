@@ -222,6 +222,12 @@ namespace PasswordManager
 
         private async void DeletePassword()
         {
+            if (_SelectedPasswordIndex == -1)
+            {
+                MessageBox.Show(_View, "No selected password", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
             await _Client.DeletePasswordAsync(entry);
             _Passwords.RemoveAt(_SelectedPasswordIndex);
@@ -229,6 +235,12 @@ namespace PasswordManager
 
         private async void ModifyPassword()
         {
+            if (_SelectedPasswordIndex == -1)
+            {
+                MessageBox.Show(_View, "No selected password", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
             Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
 
             NewPasswordView passwordView = new NewPasswordView(entry)

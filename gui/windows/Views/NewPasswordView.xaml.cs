@@ -21,6 +21,7 @@
             InitializeComponent();
 
             _PasswordBox.Password = _ViewModel.Model.Password;
+            Title = "Modify Password";
         }
 
         #endregion
