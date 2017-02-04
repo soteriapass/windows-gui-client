@@ -354,11 +354,7 @@ namespace encryption
         RSA* rsa = CreateRSA(public_key_file, true);
 
         size_t size = RSA_size(rsa);
-        char* src = new char[size];
-        //memset(src, 0, unencrypted.size() + 1);
-        //memcpy(src, unencrypted.c_str(), unencrypted.size());
 
-        char plainText[2048/8] = "Hello this is Ravi";
         auto len = RSA_public_encrypt(plain_text.size(), reinterpret_cast<const unsigned char*>(plain_text.c_str()), encrypted, rsa, RSA_PKCS1_PADDING);
         if(len == -1)
         {

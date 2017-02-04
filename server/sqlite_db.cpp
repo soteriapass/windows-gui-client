@@ -30,7 +30,7 @@ bool sqlite_db::Init(conf& conf_file)
         return false;
     }
 
-    const std::string create_pswd_table_sql = "CREATE TABLE IF NOT EXISTS PASSWORDS(ID INT PRIMARY KEY NOT NULL, USER_ID INT NOT NULL, ACCOUNT_NAME VARCHAR(512) NOT NULL, USERNAME VARCHAR(512) NOT NULL, PASSWORD VARCHAR(512) NOT NULL, EXTRA VARCHAR(512) NOT NULL);";
+    const std::string create_pswd_table_sql = "CREATE TABLE IF NOT EXISTS PASSWORDS(ID INT PRIMARY KEY NOT NULL, USER_ID INT NOT NULL, ACCOUNT_NAME VARCHAR(512) NOT NULL, USERNAME VARCHAR(512) NOT NULL, PASSWORD BLOB NOT NULL, EXTRA VARCHAR(512) NOT NULL);";
     rc = sqlite3_exec(m_Database, create_pswd_table_sql.c_str(), nullptr, nullptr, &err);
     if(rc != SQLITE_OK)
     {
