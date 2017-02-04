@@ -22,6 +22,7 @@
 
             _PasswordBox.Password = _ViewModel.Model.Password;
             Title = "Modify Password";
+            _AccountNameTextBox.IsEnabled = entry == null;
         }
 
         #endregion
