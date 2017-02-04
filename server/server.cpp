@@ -221,11 +221,12 @@ grpc::Status PasswordManagerServer::ModifyPassword(grpc::ServerContext* context,
     int enc_len;
     encryption::EncryptString(request->password(), encrypted, enc_len, m_PublicKey);
 
-    if(!m_Database->ModifyPassword(userId, request->account_name(), { reinterpret_cast<char*>(encrypted) }))
+    if(!m_Database->ModifyPassword(userId, request->account_name(), request->username(), reinterpret_cast<char*>(encrypted), enc_len, request->extra()))
     {
         return grpc::Status(grpc::StatusCode::UNKNOWN, "Unknown error");
     }
 
+    response->set_success(true);
     return grpc::Status::OK;
 }
 

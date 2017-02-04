@@ -73,6 +73,8 @@ int sqlite_db::GetUserCount() const
         return 0;
     };
     std::string sql = "SELECT * FROM USERS";
+    logging::log(sql, true);
+
     char* err = nullptr;
     int rc = sqlite3_exec(m_Database, sql.c_str(), callbackFunc, reinterpret_cast<void*>(&userCount), &err);
     if( rc != SQLITE_OK )
@@ -90,6 +92,7 @@ bool sqlite_db::InsertUser(int id, const std::string& username, const std::strin
     std::stringstream insert_sql;
     insert_sql << "INSERT INTO USERS(ID, USERNAME, PASSWORD, SALT, ITERATIONS, ADMIN)";
     insert_sql << "VALUES (" << id << ",'" << username << "','" << password << "','" << salt << "'," << iterations << "," << admin << ")";
+    logging::log(insert_sql.str(), true);
 
     char* err = nullptr;
     int rc = sqlite3_exec(m_Database, insert_sql.str().c_str(), nullptr, nullptr, &err);
@@ -111,6 +114,7 @@ bool sqlite_db::Insert2FA(int id, const std::string& secret, std::vector<int> sc
     std::stringstream insert_sql;
     insert_sql << "INSERT INTO TFA(USER_ID, SECRET_KEY, SCRATCH1, SCRATCH2, SCRATCH3, SCRATCH4, SCRATCH5)";
     insert_sql << " VALUES (" << id << ",'" << secret << "'," << scratchCodes[0] << "," << scratchCodes[1] << "," << scratchCodes[2] << "," << scratchCodes[3] << "," << scratchCodes[4] << ")";
+    logging::log(insert_sql.str(), true);
 
     char* err = nullptr;
     int rc = sqlite3_exec(m_Database, insert_sql.str().c_str(), nullptr, nullptr, &err);
@@ -128,6 +132,7 @@ bool sqlite_db::ValidPasswordForUser(const std::string& username, const std::str
     logging::log("sqlite_db::ValidPasswordForUser", true);
     std::stringstream sql;
     sql << "SELECT PASSWORD FROM USERS WHERE USERNAME == '" << username << "'";
+    logging::log(sql.str(), true);
 
     auto callbackFunc = [](void* unknown, int argc, char** argv, char** azColName) -> int
     {
@@ -157,6 +162,7 @@ std::string sqlite_db::GetSaltForUser(const std::string& username)
     logging::log("sqlite_db::GetSaltForUser", true);
     std::stringstream sql;
     sql << "SELECT SALT FROM USERS WHERE USERNAME == '" << username << "'";
+    logging::log(sql.str(), true);
 
     auto callbackFunc = [](void* unknown, int argc, char** argv, char** azColName) -> int
     {
@@ -187,6 +193,7 @@ int sqlite_db::GetUserId(const std::string& username)
     logging::log("sqlite_db::GetUserId", true);
     std::stringstream sql;
     sql << "SELECT ID FROM USERS WHERE  USERNAME == '" << username << "'";
+    logging::log(sql.str(), true);
 
     auto callbackFunc = [](void* unknown, int argc, char** argv, char** azColName) -> int
     {
@@ -216,6 +223,7 @@ bool sqlite_db::Get2FA(int userId, std::string& token)
     logging::log("sqlite_db::Get2FA", true);
     std::stringstream sql;
     sql << "SELECT SECRET_KEY FROM TFA WHERE USER_ID == '" << userId << "'";
+    logging::log(sql.str(), true);
 
     auto callbackFunc = [](void* unknown, int argc, char** argv, char** azColName) -> int
     {
@@ -249,6 +257,8 @@ bool sqlite_db::UpdateUserPassword(int userId, const std::string& hashedPassword
     char* err = nullptr;
     std::stringstream update_sql;
     update_sql << "UPDATE USERS set PASSWORD = '" << hashedPassword << "' WHERE ID == " << userId << ";";
+    logging::log(update_sql.str(), true);
+
     int rc = sqlite3_exec(m_Database, update_sql.str().c_str(), nullptr, nullptr, &err);
     if( rc != SQLITE_OK )
     {
@@ -267,6 +277,7 @@ bool sqlite_db::AddPassword(int userId, const std::string& accountName, const st
     std::stringstream insert_sql;
     insert_sql << "INSERT INTO PASSWORDS(ID, USER_ID, ACCOUNT_NAME, USERNAME, PASSWORD, EXTRA) ";
     insert_sql << "VALUES (" << id << ","<< userId << ",'" << accountName << "','" << username << "','" << password << "','" << extra << "')";
+    logging::log(insert_sql.str(), true);
 
     char* err = nullptr;
     int data = 0;
@@ -288,6 +299,7 @@ bool sqlite_db::AddPassword(int userId, const std::string& accountName, const st
     std::stringstream insert_sql;
     insert_sql << "INSERT INTO PASSWORDS(ID, USER_ID, ACCOUNT_NAME, USERNAME, PASSWORD, EXTRA) ";
     insert_sql << "VALUES (" << id << ","<< userId << ",'" << accountName << "','" << username << "',?,'" << extra << "')";
+    logging::log(insert_sql.str(), true);
 
     sqlite3_stmt* stmt = nullptr;
     int rc = sqlite3_prepare_v2(m_Database, insert_sql.str().c_str(), -1, &stmt, nullptr);
@@ -332,6 +344,8 @@ int sqlite_db::GetPasswordEntryCount() const
         return 0;
     };
     std::string sql = "SELECT * FROM PASSWORDS";
+    logging::log(sql, true);
+
     char* err = nullptr;
     int rc = sqlite3_exec(m_Database, sql.c_str(), callbackFunc, reinterpret_cast<void*>(&userCount), &err);
     if( rc != SQLITE_OK )
@@ -345,8 +359,11 @@ int sqlite_db::GetPasswordEntryCount() const
 
 bool sqlite_db::DeletePassword(int userId, const std::string& accountName)
 {
+    logging::log("sqlite_db::DeletePassword", true);
     std::stringstream update_sql;
     update_sql << "UPDATE PASSWORDS set USER_ID = 0, ACCOUNT_NAME = '', USERNAME = '', PASSWORD = '', EXTRA = '' WHERE USER_ID == " << userId << " AND ACCOUNT_NAME == '" << accountName << "';";
+    logging::log(update_sql.str(), true);
+
     char* err = nullptr;
     int rc = sqlite3_exec(m_Database, update_sql.str().c_str(), nullptr, nullptr, &err);
     if( rc != SQLITE_OK )
@@ -358,10 +375,25 @@ bool sqlite_db::DeletePassword(int userId, const std::string& accountName)
     return true;
 }
 
-bool sqlite_db::ModifyPassword(int userId, const std::string& accountName, const std::string& password)
+bool sqlite_db::ModifyPassword(int userId, const std::string& accountName, const std::string& username, const std::string& password, const std::string& extra)
 {
+    logging::log("sqlite_db::ModifyPassword", true);
     std::stringstream update_sql;
-    update_sql << "UPDATE PASSWORDS set PASSWORD = '" << password << "' WHERE USER_ID == " << userId << " AND ACCOUNT_NAME == '" << accountName << "';";
+    update_sql << "UPDATE PASSWORDS set PASSWORD = '" << password << "'";
+
+    if(!username.empty())
+    {
+        update_sql << ", USERNAME = '" << username << "'";
+    }
+
+    if(!extra.empty())
+    {
+        update_sql << ", EXTRA = '" << extra << "'";
+    }
+
+    update_sql << " WHERE USER_ID == " << userId << " AND ACCOUNT_NAME == '" << accountName << "';";
+    logging::log(update_sql.str(), true);
+
     char* err = nullptr;
     int rc = sqlite3_exec(m_Database, update_sql.str().c_str(), nullptr, nullptr, &err);
     if( rc != SQLITE_OK )
@@ -371,10 +403,60 @@ bool sqlite_db::ModifyPassword(int userId, const std::string& accountName, const
         return false;
     }
     return true;
+}
+
+bool sqlite_db::ModifyPassword(int userId, const std::string& accountName, const std::string& username, const char* enc_password, int enc_length, const std::string& extra)
+{
+    logging::log("sqlite_db::ModifyPassword2", true);
+    std::stringstream update_sql;
+    update_sql << "UPDATE PASSWORDS set PASSWORD = ?";
+
+    if(!username.empty())
+    {
+        update_sql << ", USERNAME = '" << username << "'";
+    }
+
+    if(!extra.empty())
+    {
+        update_sql << ", EXTRA = '" << extra << "'";
+    }
+
+    update_sql << " WHERE USER_ID == " << userId << " AND ACCOUNT_NAME == '" << accountName << "';";
+    logging::log(update_sql.str(), true);
+
+    sqlite3_stmt* stmt = nullptr;
+    int rc = sqlite3_prepare_v2(m_Database, update_sql.str().c_str(), -1, &stmt, nullptr);
+    if( rc != SQLITE_OK )
+    {
+        sqlite3_finalize(stmt);
+        std::cerr << "(sqlite error) " << sqlite3_errmsg(m_Database) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_bind_blob(stmt, 1, enc_password, enc_length, SQLITE_STATIC);
+    if( rc != SQLITE_OK )
+    {
+        sqlite3_finalize(stmt);
+        std::cerr << "(sqlite error) " << sqlite3_errmsg(m_Database) << std::endl;
+        return false;
+    }
+
+    rc = sqlite3_step(stmt);
+    if ( rc != SQLITE_DONE )
+    {
+        sqlite3_finalize(stmt);
+        std::cerr << "(sqlite execution failed) " << sqlite3_errmsg(m_Database) << std::endl;
+        return false;
+    }
+
+    sqlite3_finalize(stmt);
+
+    return true; 
 }
 
 bool sqlite_db::ListPasswords(int userId, void (*add_callback)(char*,char*,char*,char*,void*), void* cookie)
 {
+    logging::log("sqlite_db::ListPasswords", true);
     struct list_callback_info_t 
     {
         void (*add_callback)(char*,char*,char*,char*,void*);
@@ -399,6 +481,7 @@ bool sqlite_db::ListPasswords(int userId, void (*add_callback)(char*,char*,char*
     sql << "SELECT ACCOUNT_NAME, USERNAME, PASSWORD, EXTRA FROM PASSWORDS WHERE USER_ID == " << userId << ";";
 
     char* err = nullptr;
+    logging::log(sql.str().c_str(), true);
     int rc = sqlite3_exec(m_Database, sql.str().c_str(), callbackFunc, &callbackInfo, &err);
     if( rc != SQLITE_OK )
     {
