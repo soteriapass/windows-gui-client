@@ -28,8 +28,8 @@ namespace PasswordManager
         [JsonProperty]
         private string _PasswordManagerPort;
 
-        [JsonProperty]
         private string _Password;
+        private string _TwoFactorAuthToken;
 
         #endregion
 
@@ -68,7 +68,13 @@ namespace PasswordManager
             get { return _AuthenticationPort; }
             set { _AuthenticationPort = value; }
         }
-        
+
+        public string TwoFactorAuthToken
+        {
+            get { return _TwoFactorAuthToken; }
+            set { _TwoFactorAuthToken = value; }
+        }
+
         [Browsable(false)]
         public string AuthenticationChannel
         {

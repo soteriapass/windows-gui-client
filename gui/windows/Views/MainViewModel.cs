@@ -127,11 +127,32 @@ namespace PasswordManager
                 if (view.ShowDialog() == true)
                 {
                     request.Username = _Model.Username;
-                    request.Password = "asdf";// _Model.Password; TODO: FIX THIS
+                    request.Password = _Model.Password;
                 }
             }
 
-            var result =  client.Authenticate(request);
+            var result = client.Authenticate(request);
+
+            bool cancelled = false;
+            while(result.TokenNeededFor2Fa && !cancelled)
+            {
+                LoginView view = new LoginView(true)
+                {
+                    Owner = parentView,
+                    WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
+                };
+                if (view.ShowDialog() == true)
+                {
+                    request.Username = _Model.Username;
+                    request.Password = _Model.Password;
+                    request.TfaToken = int.Parse(_Model.TwoFactorAuthToken);
+                }
+                else
+                {
+                    cancelled = true;
+                }
+                result = client.Authenticate(request);
+            }
 
             _Token = result.Token;
 
