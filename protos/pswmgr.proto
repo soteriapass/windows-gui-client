@@ -18,16 +18,23 @@ service PasswordManager
 service UserManagement 
 {
     rpc CreateUser (UserCreationRequest) returns (UserCreationReply) {}
+    rpc UpdateUserPassword(UserPasswordUpdateRequest) returns (SimpleReply) {}
 }
 
-message AuthenticationRequest 
+message AuthenticationRequest
 {
     string username = 1;
     string password = 2; 
     int32 tfa_token = 3;
 }
 
-message UserCreationRequest 
+message UserPasswordUpdateRequest
+{
+    string username = 1;
+    string password = 2;
+}
+
+message UserCreationRequest
 {
     string username = 1;
     string password = 2;

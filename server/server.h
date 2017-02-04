@@ -22,6 +22,8 @@ public:
     bool Init(conf& conf_file);
     bool Run(conf& conf_file);
 
+    bool IsStrongPassword(const std::string& password) const;
+
 protected:
     PasswordManagerServer();
     ~PasswordManagerServer();
@@ -38,6 +40,7 @@ private:
 
     // User Management Service
     grpc::Status CreateUser(grpc::ServerContext* context, const pswmgr::UserCreationRequest* request, pswmgr::UserCreationReply* response) override;
+    grpc::Status UpdateUserPassword(grpc::ServerContext* context, const pswmgr::UserPasswordUpdateRequest* request, pswmgr::SimpleReply* response) override;
 
 private:
     static PasswordManagerServer* ms_Instance;

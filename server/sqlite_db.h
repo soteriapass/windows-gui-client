@@ -15,6 +15,8 @@ public:
     std::string GetSaltForUser(const std::string& username) override;
     int GetUserId(const std::string& username) override;
     bool Get2FA(int userId, std::string& token) override;
+    bool UpdateUserPassword(int userId, const std::string& hashedPassword) override;
+
     bool AddPassword(int userId, const std::string& accountName, const std::string& username, const std::string& password, const std::string& extra) override;
     bool AddPassword(int userId, const std::string& accountName, const std::string& username, const char* enc_password, int enc_length, const std::string& extra) override;
     bool DeletePassword(int userId, const std::string& accountName) override;

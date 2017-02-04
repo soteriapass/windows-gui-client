@@ -289,6 +289,47 @@ grpc::Status PasswordManagerServer::CreateUser(grpc::ServerContext* context, con
     return grpc::Status(grpc::StatusCode::UNKNOWN, "Database error");
 }
 
+grpc::Status PasswordManagerServer::UpdateUserPassword(grpc::ServerContext* context, const pswmgr::UserPasswordUpdateRequest* request, pswmgr::SimpleReply* response)
+{
+    logging::log("PasswordManagerServer::CreateUser", true);
+    if(context == nullptr || !context->auth_context()->IsPeerAuthenticated())
+    {
+        return grpc::Status(grpc::StatusCode::UNAUTHENTICATED, "");
+    }
+
+    
+
+    int userId = m_Database->GetUserId(request->username());
+    const std::string salt = m_Database->GetSaltForUser(request->username());
+    std::string hashedPassword = encryption::HashAndSalt(request->password().c_str(), reinterpret_cast<const unsigned char*>(salt.c_str()), 10000, 64);
+    if(m_Database->UpdateUserPassword(userId, hashedPassword))
+    {
+        response->set_success(true);
+        return grpc::Status::OK;
+    }
+    return grpc::Status(grpc::StatusCode::UNKNOWN, "Database error");
+}
+
+bool PasswordManagerServer::IsStrongPassword(const std::string& password) const
+{
+    if(password.size() < 8)
+        return false;
+
+    bool upper = false;
+    bool lower = false;
+    bool digit = false;
+    bool alpha = false;
+    for(char chr : password)
+    {
+        upper |= isupper(chr);
+        lower |= islower(chr);
+        digit |= isdigit(chr);
+        alpha |= isalpha(chr);
+    }
+
+    return upper && lower && digit && alpha;
+}
+
 PasswordManagerServer* PasswordManagerServer::Instance()
 {
     if(ms_Instance == nullptr)

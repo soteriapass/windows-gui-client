@@ -242,6 +242,24 @@ bool sqlite_db::Get2FA(int userId, std::string& token)
     return true;
 }
 
+bool sqlite_db::UpdateUserPassword(int userId, const std::string& hashedPassword)
+{
+    logging::log("sqlite_db::UpdateUserPassword", true);
+
+    char* err = nullptr;
+    std::stringstream update_sql;
+    update_sql << "UPDATE USERS set PASSWORD = '" << hashedPassword << "' WHERE USER_ID == " << userId << ";";
+    int rc = sqlite3_exec(m_Database, update_sql.str().c_str(), nullptr, nullptr, &err);
+    if( rc != SQLITE_OK )
+    {
+        std::cerr << "(sqlite error) " << err << std::endl;
+        sqlite3_free(err);
+        return false;
+    }
+
+    return true;
+}
+
 bool sqlite_db::AddPassword(int userId, const std::string& accountName, const std::string& username, const std::string& password, const std::string& extra)
 {
     logging::log("sqlite_db::AddPassword", true);

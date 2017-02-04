@@ -17,6 +17,7 @@ public:
     virtual std::string GetSaltForUser(const std::string& username) = 0;
     virtual int GetUserId(const std::string& username) = 0;
     virtual bool Get2FA(int userId, std::string& token) = 0;
+    virtual bool UpdateUserPassword(int userId, const std::string& hashedPassword) = 0;
 
     //Password access
     virtual bool AddPassword(int userId, const std::string& accountName, const std::string& username, const std::string& password, const std::string& extra) = 0;
