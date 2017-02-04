@@ -349,14 +349,14 @@ namespace encryption
         }    
     }
 
-    bool EncryptString(const std::string& plain_text, unsigned char* encrypted, const std::string& public_key_file)
+    bool EncryptString(const std::string& plain_text, unsigned char* encrypted, int& enc_len, const std::string& public_key_file)
     {
         RSA* rsa = CreateRSA(public_key_file, true);
 
         size_t size = RSA_size(rsa);
 
-        auto len = RSA_public_encrypt(plain_text.size(), reinterpret_cast<const unsigned char*>(plain_text.c_str()), encrypted, rsa, RSA_PKCS1_PADDING);
-        if(len == -1)
+        enc_len = RSA_public_encrypt(plain_text.size(), reinterpret_cast<const unsigned char*>(plain_text.c_str()), encrypted, rsa, RSA_PKCS1_PADDING);
+        if(enc_len == -1)
         {
             RSA_free(rsa);
             PrintLastEncryptionError();

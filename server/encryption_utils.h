@@ -20,6 +20,6 @@ namespace encryption
     bool GenerateEncryptionKey(std::string& out_key, bool generate_public_key, std::string& out_public_key);
     bool GenerateAndSaveEncryptionKey(const std::string& out_file, bool save_public_key = false, std::string out_public_file = "");
 
-    bool EncryptString(const std::string& unencrypted, unsigned char* encrytped, const std::string& public_key_file);
+    bool EncryptString(const std::string& unencrypted, unsigned char* encrypted, int& enc_size, const std::string& public_key_file);
     bool DecryptString(unsigned char* encrypted, unsigned char* unencrypted, const std::string& private_key_file);
 }
