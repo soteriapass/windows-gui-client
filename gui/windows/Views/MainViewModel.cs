@@ -1,5 +1,4 @@
 ﻿using Grpc.Core;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -7,8 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Pswmgr;
-using System;
+using System.Linq;
 
 namespace PasswordManager
 {
@@ -25,8 +23,10 @@ namespace PasswordManager
         private string _Token;
 
         private readonly ObservableCollection<Pswmgr.PasswordEntry> _Passwords;
+        private readonly ObservableCollection<Pswmgr.PasswordEntry> _PasswordsRaw;
 
         private int _SelectedPasswordIndex;
+        private string _SearchText;
 
         #endregion
 
@@ -40,6 +40,7 @@ namespace PasswordManager
             _ConnectedStatus = "Disconnected";
 
             _Passwords = new ObservableCollection<Pswmgr.PasswordEntry>();
+            _PasswordsRaw = new ObservableCollection<Pswmgr.PasswordEntry>();
 
             _SelectedPasswordIndex = -1;
 
@@ -118,6 +119,21 @@ namespace PasswordManager
                 {
                     _SelectedPasswordIndex = value;
                     OnPropertyChanged();
+                }
+            }
+        }
+
+        public string SearchText
+        {
+            get { return _SearchText; }
+            set
+            {
+                if(_SearchText != value)
+                {
+                    _SearchText = value;
+                    OnPropertyChanged();
+
+                    Search(value);
                 }
             }
         }
@@ -218,7 +234,7 @@ namespace PasswordManager
             }
         }
 
-        internal async Task<bool> AddNewPassword(PasswordEntry newPassword)
+        internal async Task<bool> AddNewPassword(Pswmgr.PasswordEntry newPassword)
         {
             var response = await _Client.AddPasswordAsync(newPassword);
             FetchPasswords();
@@ -277,6 +293,47 @@ namespace PasswordManager
             Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
 
             System.Windows.Clipboard.SetText(entry.Password);
+        }
+
+        private void Search(string searchTerm)
+        {
+            searchTerm = searchTerm.ToLower();
+            if(!_PasswordsRaw.Any() && _Passwords.Any())
+            {
+                foreach(var entry in _Passwords)
+                {
+                    _PasswordsRaw.Add(entry);
+                }
+            }
+
+            _Passwords.Clear();
+            foreach(var entry in _PasswordsRaw)
+            {
+                if(entry.AccountName.ToLower().Contains(searchTerm))
+                {
+                    _Passwords.Add(entry);
+                }
+                else if(entry.Extra.ToLower().Contains(searchTerm))
+                {
+                    _Passwords.Add(entry);
+                }
+                else if (entry.Username.ToLower().Contains(searchTerm))
+                {
+                    _Passwords.Add(entry);
+                }
+                else if(LevenshteinDistance.Compute(entry.AccountName.ToLower(), searchTerm) < 5)
+                {
+                    _Passwords.Add(entry);
+                }
+                else if (LevenshteinDistance.Compute(entry.Extra.ToLower(), searchTerm) < 5)
+                {
+                    _Passwords.Add(entry);
+                }
+                else if (LevenshteinDistance.Compute(entry.Username.ToLower(), searchTerm) < 5)
+                {
+                    _Passwords.Add(entry);
+                }
+            }
         }
 
         #endregion

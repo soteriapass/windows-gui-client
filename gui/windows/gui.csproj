@@ -107,6 +107,7 @@
     <Compile Include="Commands\ShowOptions.cs" />
     <Compile Include="Conf.cs" />
     <Compile Include="Utilities\ExtraDataToImageConverter.cs" />
+    <Compile Include="Utilities\LevenshteinDistance.cs" />
     <Compile Include="Utilities\StringToHiddenStringConverter.cs" />
     <Compile Include="Views\LoginView.xaml.cs">
       <DependentUpon>LoginView.xaml</DependentUpon>
