@@ -27,6 +27,9 @@ namespace PasswordManager
 
         private int _SelectedPasswordIndex;
         private string _SearchText;
+        private bool _IsBusy;
+
+        private readonly BusyScope _BusyScope;
 
         #endregion
 
@@ -43,6 +46,7 @@ namespace PasswordManager
             _PasswordsRaw = new ObservableCollection<Pswmgr.PasswordEntry>();
 
             _SelectedPasswordIndex = -1;
+            _BusyScope = new BusyScope(() => IsBusy = true, ()=> IsBusy = false);
 
             Authenticate(null);
         }
@@ -138,6 +142,19 @@ namespace PasswordManager
             }
         }
 
+        public bool IsBusy
+        {
+            get { return true; }
+            set
+            {
+                if(_IsBusy != value)
+                {
+                    _IsBusy = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         #endregion
 
         #region Methods
@@ -155,62 +172,66 @@ namespace PasswordManager
             if (!File.Exists(_Model.ServerCertificate))
                 return;
 
-            ConnectedStatus = "Connecting";
-
-            string rootCertificate = File.ReadAllText(_Model.ServerCertificate);
-
-            var creds = new SslCredentials(rootCertificate);
-            Channel channel = new Channel(_Model.AuthenticationChannel, creds);
-
-            Pswmgr.AuthenticationRequest request = new Pswmgr.AuthenticationRequest();
-            var client = new Pswmgr.Authentication.AuthenticationClient(channel);
-
-            if (string.IsNullOrEmpty(_Model.Username) || string.IsNullOrEmpty(_Model.Password))
+            using (_BusyScope.Start())
             {
-                LoginView view = new LoginView()
+                ConnectedStatus = "Connecting";
+
+                string rootCertificate = File.ReadAllText(_Model.ServerCertificate);
+
+                var creds = new SslCredentials(rootCertificate);
+                Channel channel = new Channel(_Model.AuthenticationChannel, creds);
+
+                Pswmgr.AuthenticationRequest request = new Pswmgr.AuthenticationRequest();
+                var client = new Pswmgr.Authentication.AuthenticationClient(channel);
+
+                if (string.IsNullOrEmpty(_Model.Username) || string.IsNullOrEmpty(_Model.Password))
                 {
-                    Owner = parentView,
-                    WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
-                };
-                if (view.ShowDialog() == true)
-                {
-                    request.Username = _Model.Username;
-                    request.Password = _Model.Password;
+                    LoginView view = new LoginView()
+                    {
+                        Owner = parentView,
+                        WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
+                    };
+                    if (view.ShowDialog() == true)
+                    {
+                        request.Username = _Model.Username;
+                        request.Password = _Model.Password;
+                    }
                 }
+
+                var result = client.Authenticate(request);
+
+                bool cancelled = false;
+                while (result.TokenNeededFor2Fa && !cancelled)
+                {
+                    LoginView view = new LoginView(true)
+                    {
+                        Owner = parentView,
+                        WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
+                    };
+                    if (view.ShowDialog() == true)
+                    {
+                        request.Username = _Model.Username;
+                        request.Password = _Model.Password;
+                        request.TfaToken = int.Parse(_Model.TwoFactorAuthToken);
+                    }
+                    else
+                    {
+                        cancelled = true;
+                    }
+                    result = client.Authenticate(request);
+                }
+
+                _Token = result.Token;
+
+                ConnectedStatus = "Authenticated";
+
+                CallCredentials callCreds = CallCredentials.FromInterceptor(CustomAuthProcessor);
+                var compositeCreds = ChannelCredentials.Create(creds, callCreds);
+                Channel passwordChannel = new Channel(_Model.PasswordManagerChannel, compositeCreds);
+                _Client = new Pswmgr.PasswordManager.PasswordManagerClient(passwordChannel);
+
+                FetchPasswords();
             }
-
-            var result = client.Authenticate(request);
-
-            bool cancelled = false;
-            while (result.TokenNeededFor2Fa && !cancelled)
-            {
-                LoginView view = new LoginView(true)
-                {
-                    Owner = parentView,
-                    WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
-                };
-                if (view.ShowDialog() == true)
-                {
-                    request.Username = _Model.Username;
-                    request.Password = _Model.Password;
-                    request.TfaToken = int.Parse(_Model.TwoFactorAuthToken);
-                }
-                else
-                {
-                    cancelled = true;
-                }
-                result = client.Authenticate(request);
-            }
-
-            _Token = result.Token;
-
-            ConnectedStatus = "Authenticated";
-
-            CallCredentials callCreds = CallCredentials.FromInterceptor(CustomAuthProcessor);
-            var compositeCreds = ChannelCredentials.Create(creds, callCreds);
-            Channel passwordChannel = new Channel(_Model.PasswordManagerChannel, compositeCreds);
-            _Client = new Pswmgr.PasswordManager.PasswordManagerClient(passwordChannel);
-            FetchPasswords();
         }
 
         private async Task CustomAuthProcessor(AuthInterceptorContext context, Metadata metadata)
@@ -224,13 +245,16 @@ namespace PasswordManager
             if (_Client == null)
                 return;
 
-            Pswmgr.SimpleRequest request = new Pswmgr.SimpleRequest();
-            var response = await _Client.ListPasswordsAsync(request);
-
-            _Passwords.Clear();
-            foreach (var password in response.Passwords)
+            using (_BusyScope.Start())
             {
-                _Passwords.Add(password);
+                Pswmgr.SimpleRequest request = new Pswmgr.SimpleRequest();
+                var response = await _Client.ListPasswordsAsync(request);
+
+                _Passwords.Clear();
+                foreach (var password in response.Passwords)
+                {
+                    _Passwords.Add(password);
+                }
             }
         }
 

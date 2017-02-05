@@ -106,6 +106,7 @@
     <Compile Include="Commands\NewPassword.cs" />
     <Compile Include="Commands\ShowOptions.cs" />
     <Compile Include="Conf.cs" />
+    <Compile Include="Utilities\BusyScope.cs" />
     <Compile Include="Utilities\ExtraDataToImageConverter.cs" />
     <Compile Include="Utilities\LevenshteinDistance.cs" />
     <Compile Include="Utilities\StringToHiddenStringConverter.cs" />
