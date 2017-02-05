@@ -26,6 +26,7 @@
                 <local:StringToHiddenStringConverter x:Key="StringConverter"/>
                 <local:ExtraDataToImageConverter x:Key="ImageConverter"/>
                 <ContextMenu x:Key="ItemContextMenu">
+                    <MenuItem Header="Copy Password to Clipboard" Command="{Binding Path=DataContext.Copy, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
                     <MenuItem Header="Delete" Command="{Binding Path=DataContext.Delete, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
                     <MenuItem Header="Modify" Command="{Binding Path=DataContext.Modify, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
                 </ContextMenu>

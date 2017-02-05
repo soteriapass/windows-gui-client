@@ -86,12 +86,17 @@ namespace PasswordManager
             get { return new DelegateCommand(ModifyPassword); }
         }
 
+        public ICommand Copy
+        {
+            get { return new DelegateCommand(CopyPassword); }
+        }
+
         public string ConnectedStatus
         {
             get { return _ConnectedStatus; }
             private set
             {
-                if(_ConnectedStatus != value)
+                if (_ConnectedStatus != value)
                 {
                     _ConnectedStatus = value;
                     OnPropertyChanged();
@@ -109,7 +114,7 @@ namespace PasswordManager
             get { return _SelectedPasswordIndex; }
             set
             {
-                if(_SelectedPasswordIndex != value)
+                if (_SelectedPasswordIndex != value)
                 {
                     _SelectedPasswordIndex = value;
                     OnPropertyChanged();
@@ -161,7 +166,7 @@ namespace PasswordManager
             var result = client.Authenticate(request);
 
             bool cancelled = false;
-            while(result.TokenNeededFor2Fa && !cancelled)
+            while (result.TokenNeededFor2Fa && !cancelled)
             {
                 LoginView view = new LoginView(true)
                 {
@@ -207,7 +212,7 @@ namespace PasswordManager
             var response = await _Client.ListPasswordsAsync(request);
 
             _Passwords.Clear();
-            foreach(var password in response.Passwords)
+            foreach (var password in response.Passwords)
             {
                 _Passwords.Add(password);
             }
@@ -259,6 +264,19 @@ namespace PasswordManager
             {
                 MessageBox.Show(_View, "Modification Cancelled", "Cancelled", MessageBoxButton.OK, MessageBoxImage.Exclamation);
             }
+        }
+
+        private void CopyPassword()
+        {
+            if (_SelectedPasswordIndex == -1)
+            {
+                MessageBox.Show(_View, "No selected password", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+
+            System.Windows.Clipboard.SetText(entry.Password);
         }
 
         #endregion
