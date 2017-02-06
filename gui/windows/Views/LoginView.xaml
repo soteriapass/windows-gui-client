@@ -28,14 +28,14 @@
             <RowDefinition Height="*"/>
             <RowDefinition Height="5"/>
         </Grid.RowDefinitions>
-        <TextBlock Grid.Row="2" Grid.Column="1" Text="Username:"/>
-        <TextBox Grid.Row="2" Grid.Column="4" Text="{Binding Username}"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="Username:" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="2" Grid.Column="4" Text="{Binding Username}" VerticalContentAlignment="Center"/>
 
-        <TextBlock Grid.Row="4" Grid.Column="1" Text="Password:"/>
-        <PasswordBox x:Name="PasswordBox" Grid.Row="4" Grid.Column="4" PasswordChanged="PasswordBox_PasswordChanged"/>
+        <TextBlock Grid.Row="4" Grid.Column="1" Text="Password:" VerticalAlignment="Center"/>
+        <PasswordBox x:Name="PasswordBox" Grid.Row="4" Grid.Column="4" PasswordChanged="PasswordBox_PasswordChanged" VerticalContentAlignment="Center"/>
 
-        <TextBlock Grid.Row="6" Grid.Column="1" Text="2FA Token:" Visibility="{Binding TwoFactorVisibility, Converter={StaticResource BoolConv}}"/>
-        <TextBox Grid.Row="6" Grid.Column="4" Text="{Binding TwoFactorAuthToken}" Visibility="{Binding TwoFactorVisibility, Converter={StaticResource BoolConv}}"/>
+        <TextBlock Grid.Row="6" Grid.Column="1" Text="2FA Token:" Visibility="{Binding TwoFactorVisibility, Converter={StaticResource BoolConv}}" VerticalAlignment="Center"/>
+        <TextBox Grid.Row="6" Grid.Column="4" Text="{Binding TwoFactorAuthToken}" Visibility="{Binding TwoFactorVisibility, Converter={StaticResource BoolConv}}" VerticalContentAlignment="Center"/>
 
         <Grid Grid.Row="8" Grid.Column="4">
             <Grid.ColumnDefinitions>

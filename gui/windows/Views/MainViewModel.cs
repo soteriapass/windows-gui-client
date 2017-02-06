@@ -324,7 +324,7 @@ namespace PasswordManager
 
         private void Search(string searchTerm)
         {
-            searchTerm = searchTerm.ToLower();
+            searchTerm = searchTerm?.ToLower();
             if(!_PasswordsRaw.Any() && _Passwords.Any())
             {
                 foreach(var entry in _Passwords)
@@ -336,7 +336,11 @@ namespace PasswordManager
             _Passwords.Clear();
             foreach(var entry in _PasswordsRaw)
             {
-                if(entry.AccountName.ToLower().Contains(searchTerm))
+                if(searchTerm == null)
+                {
+                    _Passwords.Add(entry);
+                }
+                else if(entry.AccountName.ToLower().Contains(searchTerm))
                 {
                     _Passwords.Add(entry);
                 }
