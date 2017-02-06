@@ -96,6 +96,11 @@ namespace PasswordManager
             get { return new DelegateCommand(CopyPassword); }
         }
 
+        public ICommand ShowPasswordPermanently
+        {
+            get { return new DelegateCommand(ShowSelectedPasswordPermanently); }
+        }
+
         public string ConnectedStatus
         {
             get { return _ConnectedStatus; }
@@ -320,6 +325,17 @@ namespace PasswordManager
             Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
 
             System.Windows.Clipboard.SetText(entry.Password);
+        }
+
+        private void ShowSelectedPasswordPermanently()
+        {
+            if (_SelectedPasswordIndex == -1)
+            {
+                MessageBox.Show(_View, "No selected password", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
         }
 
         private void Search(string searchTerm)
