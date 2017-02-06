@@ -250,11 +250,14 @@ namespace PasswordManager
                 Pswmgr.SimpleRequest request = new Pswmgr.SimpleRequest();
                 var response = await _Client.ListPasswordsAsync(request);
 
+                _PasswordsRaw.Clear();
                 _Passwords.Clear();
                 foreach (var password in response.Passwords)
                 {
-                    _Passwords.Add(password);
+                    _PasswordsRaw.Add(password);
+                    _Passwords.Clear(); 
                 }
+                Search(_SearchText);
             }
         }
 
