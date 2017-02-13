@@ -20,6 +20,9 @@
                 <Separator/>
                 <MenuItem Header="Exit" Command="{Binding Exit}"/>
             </MenuItem>
+            <MenuItem Header="Tools">
+                <MenuItem Header="Generate Password" Command="{Binding GeneratePassword}"/>
+            </MenuItem>
         </Menu>
 
         <Grid Grid.Row="1" VerticalAlignment="Center">
