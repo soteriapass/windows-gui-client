@@ -20,7 +20,14 @@ int main(int argc, char** argv)
         logging::log("Verbose mode activated", true);
     }
 
-    conf conf_file("pswmgrd.conf");
+    std::string conf_path = "pswmgrd.conf";
+    if(argc == 2)
+    {
+    	conf_path = argv[1];
+        std::cout << conf_path << std::endl;
+    }
+
+    conf conf_file(conf_path);
 
     if(!PasswordManagerServer::Instance()->Init(conf_file))
         return -1;

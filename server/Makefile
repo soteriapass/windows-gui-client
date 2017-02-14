@@ -55,6 +55,10 @@ pswmgrd: pswmgr.pb.o pswmgr.grpc.pb.o server.o main.o sqlite3.o conf.o encryptio
 clean:
 	rm -fr *.o *.pb.cc *.pb.h pswmgrd
 
+install:
+	mkdir -p /etc/pswmgr/
+	cp ../examples/pswmgrd.conf /etc/pswmgr/pswmgrd.conf
+	cp pswmgrd /usr/bin/pswmgrd
 
 # The following is to test your system and ensure a smoother experience.
 # They are by no means necessary to actually compile a grpc-enabled software.
