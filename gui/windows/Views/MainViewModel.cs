@@ -1,5 +1,4 @@
 ﻿using Grpc.Core;
-using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -7,8 +6,10 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
-using Pswmgr;
+using System.Linq;
 using System;
+using System.Collections.Generic;
+using System.Security.Cryptography;
 
 namespace PasswordManager
 {
@@ -25,8 +26,13 @@ namespace PasswordManager
         private string _Token;
 
         private readonly ObservableCollection<Pswmgr.PasswordEntry> _Passwords;
+        private readonly ObservableCollection<Pswmgr.PasswordEntry> _PasswordsRaw;
 
         private int _SelectedPasswordIndex;
+        private string _SearchText;
+        private bool _IsBusy;
+
+        private readonly BusyScope _BusyScope;
 
         #endregion
 
@@ -40,8 +46,10 @@ namespace PasswordManager
             _ConnectedStatus = "Disconnected";
 
             _Passwords = new ObservableCollection<Pswmgr.PasswordEntry>();
+            _PasswordsRaw = new ObservableCollection<Pswmgr.PasswordEntry>();
 
             _SelectedPasswordIndex = -1;
+            _BusyScope = new BusyScope(() => IsBusy = true, ()=> IsBusy = false);
 
             Authenticate(null);
         }
@@ -86,12 +94,58 @@ namespace PasswordManager
             get { return new DelegateCommand(ModifyPassword); }
         }
 
+        public ICommand Copy
+        {
+            get { return new DelegateCommand(CopyPassword); }
+        }
+
+        public ICommand ShowPasswordPermanently
+        {
+            get { return new DelegateCommand(ShowSelectedPasswordPermanently); }
+        }
+
+        public ICommand GeneratePassword
+        {
+            get { return new DelegateCommand(GeneratePasswordImpl); }
+        }
+
+        private void GeneratePasswordImpl()
+        {
+            const string alphanumericCharacters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890()`~!@#$%^&*-+=|\\{}[]:;\"\'<>,.?/";
+            string password = GetRandomString(16, alphanumericCharacters);
+            MessageBox.Show(_View, "New password generated and copied to the clipboard", "Password Generated", MessageBoxButton.OK, MessageBoxImage.Information);
+            System.Windows.Clipboard.SetText(password);
+        }
+
+        public static string GetRandomString(int length, IEnumerable<char> characterSet)
+        {
+            if (length < 0)
+                throw new ArgumentException("length must not be negative", "length");
+            if (length > int.MaxValue / 8) // 250 million chars ought to be enough for anybody
+                throw new ArgumentException("length is too big", "length");
+            if (characterSet == null)
+                throw new ArgumentNullException("characterSet");
+            var characterArray = characterSet.Distinct().ToArray();
+            if (characterArray.Length == 0)
+                throw new ArgumentException("characterSet must not be empty", "characterSet");
+
+            var bytes = new byte[length * 8];
+            new RNGCryptoServiceProvider().GetBytes(bytes);
+            var result = new char[length];
+            for (int i = 0; i < length; i++)
+            {
+                ulong value = BitConverter.ToUInt64(bytes, i * 8);
+                result[i] = characterArray[value % (uint)characterArray.Length];
+            }
+            return new string(result);
+        }
+
         public string ConnectedStatus
         {
             get { return _ConnectedStatus; }
             private set
             {
-                if(_ConnectedStatus != value)
+                if (_ConnectedStatus != value)
                 {
                     _ConnectedStatus = value;
                     OnPropertyChanged();
@@ -109,9 +163,37 @@ namespace PasswordManager
             get { return _SelectedPasswordIndex; }
             set
             {
-                if(_SelectedPasswordIndex != value)
+                if (_SelectedPasswordIndex != value)
                 {
                     _SelectedPasswordIndex = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public string SearchText
+        {
+            get { return _SearchText; }
+            set
+            {
+                if(_SearchText != value)
+                {
+                    _SearchText = value;
+                    OnPropertyChanged();
+
+                    Search(value);
+                }
+            }
+        }
+
+        public bool IsBusy
+        {
+            get { return true; }
+            set
+            {
+                if(_IsBusy != value)
+                {
+                    _IsBusy = value;
                     OnPropertyChanged();
                 }
             }
@@ -134,62 +216,66 @@ namespace PasswordManager
             if (!File.Exists(_Model.ServerCertificate))
                 return;
 
-            ConnectedStatus = "Connecting";
-
-            string rootCertificate = File.ReadAllText(_Model.ServerCertificate);
-
-            var creds = new SslCredentials(rootCertificate);
-            Channel channel = new Channel(_Model.AuthenticationChannel, creds);
-
-            Pswmgr.AuthenticationRequest request = new Pswmgr.AuthenticationRequest();
-            var client = new Pswmgr.Authentication.AuthenticationClient(channel);
-
-            if (string.IsNullOrEmpty(_Model.Username) || string.IsNullOrEmpty(_Model.Password))
+            using (_BusyScope.Start())
             {
-                LoginView view = new LoginView()
+                ConnectedStatus = "Connecting";
+
+                string rootCertificate = File.ReadAllText(_Model.ServerCertificate);
+
+                var creds = new SslCredentials(rootCertificate);
+                Channel channel = new Channel(_Model.AuthenticationChannel, creds);
+
+                Pswmgr.AuthenticationRequest request = new Pswmgr.AuthenticationRequest();
+                var client = new Pswmgr.Authentication.AuthenticationClient(channel);
+
+                if (string.IsNullOrEmpty(_Model.Username) || string.IsNullOrEmpty(_Model.Password))
                 {
-                    Owner = parentView,
-                    WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
-                };
-                if (view.ShowDialog() == true)
-                {
-                    request.Username = _Model.Username;
-                    request.Password = _Model.Password;
+                    LoginView view = new LoginView()
+                    {
+                        Owner = parentView,
+                        WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
+                    };
+                    if (view.ShowDialog() == true)
+                    {
+                        request.Username = _Model.Username;
+                        request.Password = _Model.Password;
+                    }
                 }
+
+                var result = client.Authenticate(request);
+
+                bool cancelled = false;
+                while (result.TokenNeededFor2Fa && !cancelled)
+                {
+                    LoginView view = new LoginView(true)
+                    {
+                        Owner = parentView,
+                        WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
+                    };
+                    if (view.ShowDialog() == true)
+                    {
+                        request.Username = _Model.Username;
+                        request.Password = _Model.Password;
+                        request.TfaToken = int.Parse(_Model.TwoFactorAuthToken);
+                    }
+                    else
+                    {
+                        cancelled = true;
+                    }
+                    result = client.Authenticate(request);
+                }
+
+                _Token = result.Token;
+
+                ConnectedStatus = "Authenticated";
+
+                CallCredentials callCreds = CallCredentials.FromInterceptor(CustomAuthProcessor);
+                var compositeCreds = ChannelCredentials.Create(creds, callCreds);
+                Channel passwordChannel = new Channel(_Model.PasswordManagerChannel, compositeCreds);
+                _Client = new Pswmgr.PasswordManager.PasswordManagerClient(passwordChannel);
+
+                FetchPasswords();
             }
-
-            var result = client.Authenticate(request);
-
-            bool cancelled = false;
-            while(result.TokenNeededFor2Fa && !cancelled)
-            {
-                LoginView view = new LoginView(true)
-                {
-                    Owner = parentView,
-                    WindowStartupLocation = parentView == null ? WindowStartupLocation.CenterScreen : WindowStartupLocation.CenterOwner
-                };
-                if (view.ShowDialog() == true)
-                {
-                    request.Username = _Model.Username;
-                    request.Password = _Model.Password;
-                    request.TfaToken = int.Parse(_Model.TwoFactorAuthToken);
-                }
-                else
-                {
-                    cancelled = true;
-                }
-                result = client.Authenticate(request);
-            }
-
-            _Token = result.Token;
-
-            ConnectedStatus = "Authenticated";
-
-            CallCredentials callCreds = CallCredentials.FromInterceptor(CustomAuthProcessor);
-            var compositeCreds = ChannelCredentials.Create(creds, callCreds);
-            Channel passwordChannel = new Channel(_Model.PasswordManagerChannel, compositeCreds);
-            _Client = new Pswmgr.PasswordManager.PasswordManagerClient(passwordChannel);
-            FetchPasswords();
         }
 
         private async Task CustomAuthProcessor(AuthInterceptorContext context, Metadata metadata)
@@ -203,17 +289,23 @@ namespace PasswordManager
             if (_Client == null)
                 return;
 
-            Pswmgr.SimpleRequest request = new Pswmgr.SimpleRequest();
-            var response = await _Client.ListPasswordsAsync(request);
-
-            _Passwords.Clear();
-            foreach(var password in response.Passwords)
+            using (_BusyScope.Start())
             {
-                _Passwords.Add(password);
+                Pswmgr.SimpleRequest request = new Pswmgr.SimpleRequest();
+                var response = await _Client.ListPasswordsAsync(request);
+
+                _PasswordsRaw.Clear();
+                _Passwords.Clear();
+                foreach (var password in response.Passwords)
+                {
+                    _PasswordsRaw.Add(password);
+                    _Passwords.Clear(); 
+                }
+                Search(_SearchText);
             }
         }
 
-        internal async Task<bool> AddNewPassword(PasswordEntry newPassword)
+        internal async Task<bool> AddNewPassword(Pswmgr.PasswordEntry newPassword)
         {
             var response = await _Client.AddPasswordAsync(newPassword);
             FetchPasswords();
@@ -258,6 +350,75 @@ namespace PasswordManager
             else
             {
                 MessageBox.Show(_View, "Modification Cancelled", "Cancelled", MessageBoxButton.OK, MessageBoxImage.Exclamation);
+            }
+        }
+
+        private void CopyPassword()
+        {
+            if (_SelectedPasswordIndex == -1)
+            {
+                MessageBox.Show(_View, "No selected password", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+
+            System.Windows.Clipboard.SetText(entry.Password);
+        }
+
+        private void ShowSelectedPasswordPermanently()
+        {
+            if (_SelectedPasswordIndex == -1)
+            {
+                MessageBox.Show(_View, "No selected password", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
+            }
+
+            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+        }
+
+        private void Search(string searchTerm)
+        {
+            searchTerm = searchTerm?.ToLower();
+            if(!_PasswordsRaw.Any() && _Passwords.Any())
+            {
+                foreach(var entry in _Passwords)
+                {
+                    _PasswordsRaw.Add(entry);
+                }
+            }
+
+            _Passwords.Clear();
+            foreach(var entry in _PasswordsRaw)
+            {
+                if(searchTerm == null)
+                {
+                    _Passwords.Add(entry);
+                }
+                else if(entry.AccountName.ToLower().Contains(searchTerm))
+                {
+                    _Passwords.Add(entry);
+                }
+                else if(entry.Extra.ToLower().Contains(searchTerm))
+                {
+                    _Passwords.Add(entry);
+                }
+                else if (entry.Username.ToLower().Contains(searchTerm))
+                {
+                    _Passwords.Add(entry);
+                }
+                else if(LevenshteinDistance.Compute(entry.AccountName.ToLower(), searchTerm) < 5)
+                {
+                    _Passwords.Add(entry);
+                }
+                else if (LevenshteinDistance.Compute(entry.Extra.ToLower(), searchTerm) < 5)
+                {
+                    _Passwords.Add(entry);
+                }
+                else if (LevenshteinDistance.Compute(entry.Username.ToLower(), searchTerm) < 5)
+                {
+                    _Passwords.Add(entry);
+                }
             }
         }
 

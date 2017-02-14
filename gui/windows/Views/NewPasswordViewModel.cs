@@ -12,6 +12,7 @@ namespace PasswordManager
         private readonly NewPasswordView _View;
         private readonly Pswmgr.PasswordEntry _Model;
         private readonly DelegateCommand _OKCommand;
+        private readonly bool _ExistingEntry;
 
         #endregion
 
@@ -19,6 +20,7 @@ namespace PasswordManager
 
         public NewPasswordViewModel(NewPasswordView view, Pswmgr.PasswordEntry entry = null)
         {
+            _ExistingEntry = entry != null;
             _View = view;
             _Model = entry ?? new Pswmgr.PasswordEntry();
             _OKCommand = new DelegateCommand(OnOk, DataCompleted);
@@ -89,6 +91,21 @@ namespace PasswordManager
                     _OKCommand.OnCanExecuteChanged();
                 }
             }
+        }
+
+        public string WindowTitle
+        {
+            get { return _ExistingEntry ? "Modify Password" : "Add Password"; }
+        }
+
+        public string ButtonContent
+        {
+            get { return _ExistingEntry ? "Modify" : "Add"; }
+        }
+
+        public bool AccountNameEnabled
+        {
+            get { return !_ExistingEntry; }
         }
 
         #endregion

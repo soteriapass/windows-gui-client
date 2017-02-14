@@ -8,6 +8,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="23"/>
+            <RowDefinition Height="23"/>
             <RowDefinition Height="*"/>
             <RowDefinition Height="23"/>
         </Grid.RowDefinitions>
@@ -19,15 +20,35 @@
                 <Separator/>
                 <MenuItem Header="Exit" Command="{Binding Exit}"/>
             </MenuItem>
+            <MenuItem Header="Tools">
+                <MenuItem Header="Generate Password" Command="{Binding GeneratePassword}"/>
+            </MenuItem>
         </Menu>
 
-        <ListView Grid.Row="1" ItemsSource="{Binding Passwords}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SelectedIndex="{Binding SelectedPasswordIndex}">
+        <Grid Grid.Row="1" VerticalAlignment="Center">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Search: "/>
+            <TextBox Grid.Column="1" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
+        </Grid>
+
+        <ListView Grid.Row="2" ItemsSource="{Binding Passwords}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SelectedIndex="{Binding SelectedPasswordIndex}">
             <ListView.Resources>
                 <local:StringToHiddenStringConverter x:Key="StringConverter"/>
                 <local:ExtraDataToImageConverter x:Key="ImageConverter"/>
                 <ContextMenu x:Key="ItemContextMenu">
+                    <MenuItem Header="Copy Password" Command="{Binding Path=DataContext.Copy, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
+                    <Separator/>
                     <MenuItem Header="Delete" Command="{Binding Path=DataContext.Delete, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
                     <MenuItem Header="Modify" Command="{Binding Path=DataContext.Modify, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
+                    <Separator/>
+                    <MenuItem Header="Show">
+                        <MenuItem Header="For 5 Seconds"/>
+                        <MenuItem Header="For 30 Seconds"/>
+                        <MenuItem Header="Permanently" Command="{Binding Path=DataContext.ShowPasswordPermanently, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
+                    </MenuItem>
                 </ContextMenu>
             </ListView.Resources>
             <ListView.ItemTemplate>
@@ -82,7 +103,7 @@
             </ListView.ItemContainerStyle>
         </ListView>
         
-        <StatusBar Grid.Row="2">
+        <StatusBar Grid.Row="3">
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*"/>
