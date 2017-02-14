@@ -37,6 +37,10 @@ PROTOC = protoc
 GRPC_CPP_PLUGIN = grpc_cpp_plugin
 GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
+INSTALL=install
+INSTALL_DIRECTORY=$(INSTALL) -dm755
+INSTALL_PROGRAM=$(INSTALL) -Dpm 0755
+
 PROTOS_PATH = ../protos
 
 vpath %.proto $(PROTOS_PATH)
@@ -56,9 +60,11 @@ clean:
 	rm -fr *.o *.pb.cc *.pb.h pswmgrd
 
 install:
-	mkdir -p /etc/pswmgr/
-	cp ../examples/pswmgrd.conf /etc/pswmgr/pswmgrd.conf
-	cp pswmgrd /usr/bin/pswmgrd
+	$(INSTALL_DIRECTORY) $(DESTDIR)/usr/bin
+	$(INSTALL_PROGRAM) pswmgrd $(DESTDIR)/usr/bin
+
+uninstall:
+	rm -f $(DESTDIR)/usr/bin/pswmgrd
 
 # The following is to test your system and ensure a smoother experience.
 # They are by no means necessary to actually compile a grpc-enabled software.
