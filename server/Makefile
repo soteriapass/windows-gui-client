@@ -61,7 +61,9 @@ clean:
 
 install:
 	$(INSTALL_DIRECTORY) $(DESTDIR)/usr/bin
+	$(INSTALL_DIRECTORY) $(DESTDIR)/etc/pswmgr
 	$(INSTALL_PROGRAM) pswmgrd $(DESTDIR)/usr/bin
+	$(INSTALL_PROGRAM) ../examples/pswmgrd.conf $(DESTDIR)/etc/pswmgr
 
 uninstall:
 	rm -f $(DESTDIR)/usr/bin/pswmgrd
