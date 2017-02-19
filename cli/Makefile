@@ -41,6 +41,10 @@ GRPC_CPP_PLUGIN_PATH ?= `which $(GRPC_CPP_PLUGIN)`
 
 PROTOS_PATH = ../protos
 
+INSTALL=install
+INSTALL_DIRECTORY=$(INSTALL) -dm755
+INSTALL_PROGRAM=$(INSTALL) -Dpm 0755
+
 vpath %.proto $(PROTOS_PATH)
 
 all: system-check pswmgr
@@ -56,6 +60,12 @@ pswmgr: pswmgr.pb.o pswmgr.grpc.pb.o client.o main.o token_authenticator.o conf.
 
 clean:
 	rm -fr *.o *.pb.cc *.pb.h pswmgr
+
+install:
+	$(INSTALL_DIRECTORY) $(DESTDIR)/usr/bin
+	$(INSTALL_DIRECTORY) $(DESTDIR)/etc/pswmgr
+	$(INSTALL_PROGRAM) pswmgr $(DESTDIR)/usr/bin
+	$(INSTALL_PROGRAM) ../examples/pswmgr.conf $(DESTDIR)/etc/pswmgr
 
 
 # The following is to test your system and ensure a smoother experience.
