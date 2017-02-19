@@ -40,6 +40,8 @@ chown pswmgr: /usr/bin/%{name}d
 %doc
 /usr/bin/%{name}d
 /etc/pswmgr/pswmgrd.conf
+/usr/bin/%{name}
+/etc/pswmgr/pswmgr.conf
 
 %changelog
 * Mon Feb 13 2017 Michael Filion <mfilion@mikefilion.com> 0.1.0-1
