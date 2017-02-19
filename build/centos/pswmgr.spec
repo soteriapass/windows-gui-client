@@ -18,11 +18,23 @@ Password Manager that uses a client/server architecture to store encrypted passw
 %build
 cd server
 make %{?_smp_mflags}
+cd ../cli
+make %{?_smp_mflags}
 
 %install
 rm -rf $RPM_BUILD_ROOT
 cd server
 %make_install
+cd ../cli
+%make_install
+
+%pre
+groupadd -rf pswmgr
+id -u pswmgr &>/dev/null || useradd -r -d /etc/pswmgr/ -g pswmgr -s /sbin/nologin pswmgr
+
+%post
+chown pswmgr: /etc/%{name}/%{name}d.conf
+chown pswmgr: /usr/bin/%{name}d
 
 %files
 %doc
@@ -30,5 +42,5 @@ cd server
 /etc/pswmgr/pswmgrd.conf
 
 %changelog
-* Mon Feb 13 2017 Michael Filion <mfilion@mikefilion.com> 0.1-1
+* Mon Feb 13 2017 Michael Filion <mfilion@mikefilion.com> 0.1.0-1
 - Initial package for CentOS
