@@ -1,5 +1,5 @@
 Name:           pswmgr
-Version:        0.1.0
+Version:        0.1.1
 Release:        1%{?dist}
 Summary:        Password manager binaries
 
@@ -44,5 +44,7 @@ chown pswmgr: /usr/bin/%{name}d
 /etc/pswmgr/pswmgr.conf
 
 %changelog
+* Sun Feb 19 2017 Michael Filion <mfilion@mikefilion.com> 0.1.1-1
+- Added client executable
 * Mon Feb 13 2017 Michael Filion <mfilion@mikefilion.com> 0.1.0-1
 - Initial package for CentOS
