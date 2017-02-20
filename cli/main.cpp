@@ -194,15 +194,12 @@ bool modify_password(PasswordManagerClient& client)
 
 int main(int argc, char** argv)
 {
-    conf conf_file("pswmgr.conf");
-
     std::vector<CMD_ACTIONS> actions;
 
+    std::string conf_file("pswmgr.conf");
     std::string user;
     std::string new_user;
     std::string modify_username;
-
-    PasswordManagerClient client(conf_file, PasswordManagerClient::GetChannel(conf_file, conf_file.get_authentication_address_and_port()));
 
     for(int i = 0; i < argc; ++i)
     {
@@ -243,7 +240,16 @@ int main(int argc, char** argv)
         {
             actions.push_back(ACTION_MODIFYPASSWORD);
         }
+        else if(strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "-config") == 0)
+        {
+            if(i + 1 < argc)
+                conf_file = argv[i+1];
+        }
     }
+ 
+    conf conf_file(conf_file); 
+    
+    PasswordManagerClient client(conf_file, PasswordManagerClient::GetChannel(conf_file, conf_file.get_authentication_address_and_port()));
 
     if(actions.empty() && !user.empty())
     {

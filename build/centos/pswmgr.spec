@@ -1,5 +1,5 @@
 Name:           pswmgr
-Version:        0.1.1
+Version:        0.1.2
 Release:        1%{?dist}
 Summary:        Password manager binaries
 
@@ -34,7 +34,11 @@ id -u pswmgr &>/dev/null || useradd -r -d /etc/pswmgr/ -g pswmgr -s /sbin/nologi
 
 %post
 chown pswmgr: /etc/%{name}/%{name}d.conf
+chown pswmgr: /etc/%{name}/%{name}.conf
 chown pswmgr: /usr/bin/%{name}d
+chown pswmgr: /usr/bin/%{name}
+chmod 600 /etc/%{name}/%{name}d.conf
+chmod 600 /etc/%{name}/%{name}.conf
 
 %files
 %doc
