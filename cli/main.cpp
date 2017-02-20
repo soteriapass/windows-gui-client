@@ -196,7 +196,7 @@ int main(int argc, char** argv)
 {
     std::vector<CMD_ACTIONS> actions;
 
-    std::string conf_file("pswmgr.conf");
+    std::string conf_filename("pswmgr.conf");
     std::string user;
     std::string new_user;
     std::string modify_username;
@@ -243,11 +243,11 @@ int main(int argc, char** argv)
         else if(strcmp(argv[i], "-c") == 0 || strcmp(argv[i], "-config") == 0)
         {
             if(i + 1 < argc)
-                conf_file = argv[i+1];
+                conf_filename = argv[i+1];
         }
     }
  
-    conf conf_file(conf_file); 
+    conf conf_file(conf_filename); 
     
     PasswordManagerClient client(conf_file, PasswordManagerClient::GetChannel(conf_file, conf_file.get_authentication_address_and_port()));
 
