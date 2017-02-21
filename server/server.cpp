@@ -5,6 +5,7 @@
 #include <sstream>
 #include <iostream>
 #include <fstream>
+#include <unistd.h>
 
 #include "encryption_utils.h"
 #include "log.h"
@@ -353,11 +354,58 @@ bool PasswordManagerServer::Init(conf& conf_file)
     if(m_Database != nullptr)
         return false;
 
+    if(!InitPid(conf_file))
+        return false;
+
     m_PublicKey = conf_file.get_public_key_filename();
     m_PrivateKey = conf_file.get_private_key_filename();
 
     m_Database = new sqlite_db();
     return m_Database->Init(conf_file);
+}
+
+bool PasswordManagerServer::InitPid(conf& conf_file)
+{
+    const std::string pid_filename = conf_file.get_pid_filename();
+    std::stringstream ss;
+    ss << "pid_filename: " << pid_filename;
+    logging::log(ss.str(), false);
+    if(!pid_filename.empty())
+    {
+        std::ifstream ifstream;
+        ifstream.open(pid_filename.c_str(), std::ios::in);
+        if(ifstream.is_open())
+        {
+            ss.str(std::string());
+            ss << "PID file already exists, exiting program";
+            logging::log(ss.str(), false);
+            return false;
+        }
+        ifstream.close();
+
+        std::ofstream ofstream;
+        ofstream.open(pid_filename.c_str(), std::ios::out);
+        if(!ofstream.is_open())
+        {
+            ss.str(std::string());
+            ss << "Couldn't open PID file";
+            logging::log(ss.str(), false);
+            return false;
+        }
+        ofstream << getpid();
+
+        ss.str(std::string());
+        ss << "process id saved for pswmgrd saved " << getpid();
+        logging::log(ss.str(), false);
+
+        ofstream.close();
+    }
+    return true;
+}
+
+void PasswordManagerServer::DestroyPid()
+{
+    
 }
 
 bool PasswordManagerServer::Run(conf& conf_file)
@@ -472,4 +520,8 @@ bool PasswordManagerServer::Run(conf& conf_file)
     userMgmtServer->Wait();
 
     return true;
+}
+
+void PasswordManagerServer::Destroy()
+{
 }

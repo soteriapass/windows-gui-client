@@ -21,12 +21,17 @@ public:
     static PasswordManagerServer* Instance();
     bool Init(conf& conf_file);
     bool Run(conf& conf_file);
+    void Destroy();
 
     bool IsStrongPassword(const std::string& password) const;
 
 protected:
     PasswordManagerServer();
     ~PasswordManagerServer();
+
+private:
+    bool InitPid(conf& conf_file);
+    void DestroyPid();
 
 private:
     //Authentication Service
