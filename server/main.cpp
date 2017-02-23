@@ -4,6 +4,7 @@
 #include "log.h"
 
 #include <sstream>
+#include <signal.h>
 
 #include <chrono>
 #include "hmac.h"
