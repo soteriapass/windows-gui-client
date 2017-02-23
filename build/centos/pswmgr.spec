@@ -1,5 +1,5 @@
 Name:           pswmgr
-Version:        0.1.2
+Version:        0.1.3
 Release:        1%{?dist}
 Summary:        Password manager binaries
 
@@ -20,6 +20,9 @@ cd server
 make %{?_smp_mflags}
 cd ../cli
 make %{?_smp_mflags}
+cd ../build/centos
+mkdir $RPM_BUILD_ROOT/etc/init.d/
+cp pswmgr $RPM_BUILD_ROOT/etc/init.d/
 
 %install
 rm -rf $RPM_BUILD_ROOT
@@ -46,8 +49,13 @@ chmod 600 /etc/%{name}/%{name}.conf
 /etc/pswmgr/pswmgrd.conf
 /usr/bin/%{name}
 /etc/pswmgr/pswmgr.conf
+/etc/init.d/pswmgr
 
 %changelog
+* Wed Feb 22 2017 Michael Filion <mfilion@mikefilion.com> 0.1.3-1
+- Modified logging
+- Added PID file
+- Included service script
 * Sun Feb 19 2017 Michael Filion <mfilion@mikefilion.com> 0.1.1-1
 - Added client executable
 * Mon Feb 13 2017 Michael Filion <mfilion@mikefilion.com> 0.1.0-1
