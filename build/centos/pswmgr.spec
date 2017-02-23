@@ -21,8 +21,6 @@ make %{?_smp_mflags}
 cd ../cli
 make %{?_smp_mflags}
 cd ../build/centos
-mkdir $RPM_BUILD_ROOT/etc/init.d/
-cp pswmgr $RPM_BUILD_ROOT/etc/init.d/
 
 %install
 rm -rf $RPM_BUILD_ROOT
