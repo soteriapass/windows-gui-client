@@ -37,7 +37,7 @@ int main(int argc, char** argv)
     if(argc == 2)
     {
     	conf_path = argv[1];
-        logging::log(conf_path, false);
+        logging::log(conf_path, true);
     }
 
     conf conf_file(conf_path);
