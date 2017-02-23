@@ -117,6 +117,7 @@ namespace PasswordManager
             System.Windows.Clipboard.SetText(password);
         }
 
+        //Code originally taken from http://stackoverflow.com/questions/54991/generating-random-passwords
         public static string GetRandomString(int length, IEnumerable<char> characterSet)
         {
             if (length < 0)
