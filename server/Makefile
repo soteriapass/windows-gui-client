@@ -62,8 +62,10 @@ clean:
 install:
 	$(INSTALL_DIRECTORY) $(DESTDIR)/usr/bin
 	$(INSTALL_DIRECTORY) $(DESTDIR)/etc/pswmgr
+	$(INSTALL_DIRECTORY) $(DESTDIR)/etc/init.d
 	$(INSTALL_PROGRAM) pswmgrd $(DESTDIR)/usr/bin
 	$(INSTALL_PROGRAM) ../examples/pswmgrd.conf $(DESTDIR)/etc/pswmgr
+	$(INSTALL_PROGRAM) ../build/centos/pswmgr $(DESTDIR)/etc/init.d
 
 uninstall:
 	rm -f $(DESTDIR)/usr/bin/pswmgrd
