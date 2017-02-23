@@ -1,4 +1,5 @@
 #include "encryption_utils.h"
+#include "log.h"
 
 #include <string>
 #include <sstream>
@@ -29,7 +30,10 @@ namespace encryption
         char * err = reinterpret_cast<char*>(malloc(130));
         ERR_load_crypto_strings();
         ERR_error_string(ERR_get_error(), err);
-        std::cout << "ERROR: " << err << std::endl; 
+
+        std::stringstream ss;
+        ss << "ERROR: " << err;
+        logging::log(ss.str(), true);
     }
 
     std::random_device rd;

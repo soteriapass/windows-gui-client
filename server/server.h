@@ -58,4 +58,5 @@ private:
 
     std::string m_PublicKey;
     std::string m_PrivateKey;
+    std::string pid_filename;
 };

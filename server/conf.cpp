@@ -1,4 +1,5 @@
 #include "conf.h"
+#include "log.h"
 
 #include <iostream>
 #include <fstream>
@@ -24,9 +25,9 @@ conf::conf(const std::string& conf_path)
             std::istringstream is_line(line);
             if(std::getline(is_line, key, ' ') && std::getline(is_line, value) && key.size() != line.size() && value.size() != line.size())
             {
-#ifdef VERBOSE
-                std::cout << key << "=" << value << std::endl;
-#endif //VERBOSE
+                std::stringstream ss;
+                ss << key << "=" << value;
+                logging::log(ss.str(), true);
                 m_Values[key] = value;
             }
         }

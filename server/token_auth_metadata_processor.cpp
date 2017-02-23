@@ -1,4 +1,5 @@
 #include "token_auth_metadata_processor.h"
+#include "log.h"
 
 #include <sstream>
 
@@ -18,7 +19,7 @@ grpc::Status TokenAuthMetadataProcessor::Process(const grpc::AuthMetadataProcess
     {
         std::stringstream ss;
         ss << "Missing " << kIdentityPropName << " property";
-        std::cout << ss;
+        logging::log(ss.str(), false);
         return grpc::Status(grpc::StatusCode::NOT_FOUND, ss.str());
     }
 

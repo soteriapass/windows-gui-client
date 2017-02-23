@@ -37,10 +37,12 @@ int main(int argc, char** argv)
     if(argc == 2)
     {
     	conf_path = argv[1];
-        std::cout << conf_path << std::endl;
+        logging::log(conf_path, false);
     }
 
     conf conf_file(conf_path);
+    if(!logging::init(conf_file))
+        return false;
 
     if(!PasswordManagerServer::Instance()->Init(conf_file))
         return -1;

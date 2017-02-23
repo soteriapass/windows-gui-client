@@ -72,8 +72,11 @@ grpc::Status PasswordManagerServer::Authenticate(grpc::ServerContext* context, c
                 else if(request->tfa_token() != 0 && !encryption::CheckTimebasedCode(secretToken, request->tfa_token()))
                 {
                     logging::log(secretToken, true);
-                    std::cout << request->tfa_token() << std::endl;
-                    logging::log("Invalid 2FA Token received", true);
+
+                    std::stringstream ss;
+                    ss << "Invalid 2FA Token received: " << request->tfa_token();
+                    logging::log(ss.str(), true);
+
                     response->set_token_needed_for_2fa(true);
                     return grpc::Status(grpc::StatusCode::OK, "Invalid 2FA Token");
                 }
@@ -366,7 +369,7 @@ bool PasswordManagerServer::Init(conf& conf_file)
 
 bool PasswordManagerServer::InitPid(conf& conf_file)
 {
-    const std::string pid_filename = conf_file.get_pid_filename();
+    pid_filename = conf_file.get_pid_filename();
     std::stringstream ss;
     ss << "pid_filename: " << pid_filename;
     logging::log(ss.str(), false);
@@ -405,7 +408,21 @@ bool PasswordManagerServer::InitPid(conf& conf_file)
 
 void PasswordManagerServer::DestroyPid()
 {
-    
+    if(!pid_filename.empty())
+    {
+        if(remove(pid_filename.c_str()) == 0)
+        {
+            std::stringstream ss;
+            ss << "Successfully removed " << pid_filename;
+            logging::log(ss.str(), false);
+        }
+        else
+        {
+            std::stringstream ss;
+            ss << "Couldn't remove " << pid_filename;
+            logging::log(ss.str(), false);
+        }
+    }
 }
 
 bool PasswordManagerServer::Run(conf& conf_file)
@@ -460,7 +477,10 @@ bool PasswordManagerServer::Run(conf& conf_file)
         builder.RegisterService(static_cast<pswmgr::Authentication::Service*>(this));
 
         authenticationServer = builder.BuildAndStart();
-        std::cout << "Authentication service listening on " << server_address << std::endl;
+
+        std::stringstream ss;
+        ss << "Authentication service listening on " << server_address;
+        logging::log(ss.str(), false);
     }
 
     std::unique_ptr<grpc::Server> passwordServer;
@@ -479,7 +499,10 @@ bool PasswordManagerServer::Run(conf& conf_file)
         builder.RegisterService(static_cast<pswmgr::PasswordManager::Service*>(this));
 
         passwordServer = builder.BuildAndStart();
-        std::cout << "Password server listening on " << server_address << std::endl;
+
+        std::stringstream ss;
+        ss << "Password server listening on " << server_address;
+        logging::log(ss.str(), false);
     }
 
     if(!conf_file.get_user_server_certificate_file().empty())
@@ -510,7 +533,9 @@ bool PasswordManagerServer::Run(conf& conf_file)
         builder.RegisterService(static_cast<pswmgr::UserManagement::Service*>(this));
 
         userMgmtServer = builder.BuildAndStart();
-        std::cout << "User management server listening on " << server_address << std::endl;
+        std::stringstream ss;
+        ss << "User management server listening on " << server_address;
+        logging::log(ss.str(), false);
     }
 
     m_IsRunning = true;
@@ -524,4 +549,5 @@ bool PasswordManagerServer::Run(conf& conf_file)
 
 void PasswordManagerServer::Destroy()
 {
+    DestroyPid();
 }
