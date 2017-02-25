@@ -1,5 +1,5 @@
 Name:           pswmgr
-Version:        0.1.3
+Version:        0.1.4
 Release:        1%{?dist}
 Summary:        Password manager binaries
 
@@ -50,6 +50,8 @@ chmod 600 /etc/%{name}/%{name}.conf
 /etc/init.d/pswmgr
 
 %changelog
+* Fri Feb 24 2017 Michael Filion <mfilion@mikefilion.com> 0.1.4-1
+- Rebuilding after adding support to redirect grpc logging to common log stream
 * Wed Feb 22 2017 Michael Filion <mfilion@mikefilion.com> 0.1.3-1
 - Modified logging
 - Added PID file
