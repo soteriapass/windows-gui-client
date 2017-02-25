@@ -2,14 +2,26 @@
 
 #include <iostream>
 #include <fstream>
+#include <sstream>
+
+#include <grpc/support/log.h>
 
 namespace logging
 {
 bool g_Verbose = false;
 std::ofstream g_logFile;
 
+void grpc_log_func(gpr_log_func_args* args)
+{
+    std::stringstream ss;
+    ss << "grpc (" << args->file << ":" << args->line << ") " << args->message;
+    logging::log(ss.str(), args->severity != GPR_LOG_SEVERITY_ERROR);
+}
+
 bool init(conf& conf_file)
 {
+    gpr_set_log_function(&grpc_log_func);
+
     const std::string log_file = conf_file.get_log_file();
     if(log_file.empty())
         return true;
