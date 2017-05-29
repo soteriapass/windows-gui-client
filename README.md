@@ -1,6 +1,4 @@
-[![Build Status](https://travis-ci.org/soteriapass/windows-gui-client.svg?branch=master)](https://travis-ci.org/soteriapass/windows-gui-client)
-
-# soteria pass windows client
+# Soteria Pass windows client
 Graphical user interface for windows
 
 ## Dependencies
@@ -24,5 +22,6 @@ Certain parts of this distribution is licensed under the Apache License [http://
 
 Tested with Visual Studio 2015
 
+* (Optional) git submodule update --init --recursive
 * Run src/generate_protos.bat
 * Open src/windows-gui-client.sln and build

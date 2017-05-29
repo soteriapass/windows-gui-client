@@ -1,5 +1,0 @@
-language: csharp
-solution: src/windows-gui-client.sln
-before_script:
-  - chmod +x src/generate_protos.sh
-  - src/generate_protos.sh
