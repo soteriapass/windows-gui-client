@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/soteriapass/windows-gui-client.svg?branch=master)](https://travis-ci.org/soteriapass/windows-gui-client)
+
 # soteria pass windows client
 Graphical user interface for windows
 
