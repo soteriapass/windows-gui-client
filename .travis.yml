@@ -1,2 +1,4 @@
 language: csharp
 solution: src/windows-gui-client.sln
+before_script:
+  - src/generate_protos.sh
