@@ -37,7 +37,7 @@ namespace PasswordManager
 
                     }
                 }
-                return new BitmapImage(new Uri("/PasswordManager;component/Resources/locked.ico", UriKind.RelativeOrAbsolute));
+                return new BitmapImage(new Uri("/PasswordManager;component/Resources/shield.ico", UriKind.RelativeOrAbsolute));
             }
             return null;
         }

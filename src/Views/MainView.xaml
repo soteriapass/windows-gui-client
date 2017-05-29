@@ -4,7 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PasswordManager"
         xmlns:pswmgr="clr-namespace:Pswmgr"
-        Title="Password Manager" Height="350" Width="525" Icon="/PasswordManager;component/Resources/locked.ico" WindowStartupLocation="CenterScreen">
+        Title="Password Manager" Height="350" Width="525" Icon="/PasswordManager;component/Resources/shield.ico" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="23"/>
