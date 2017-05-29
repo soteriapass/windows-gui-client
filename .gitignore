@@ -38,6 +38,7 @@ pswmgrd
 
 # Specific directories
 tmp
+temp
 easy-rsa
 keys
 *.opendb

@@ -17,3 +17,10 @@ This distribution includes cryptographic software. The country in which you curr
 The main license for this project is the GPLv3 - [https://github.com/devgeeks/Encryptr/blob/master/LICENSE](https://github.com/devgeeks/Encryptr/blob/master/LICENSE)
 
 Certain parts of this distribution is licensed under the Apache License [http://www.apache.org/licenses/LICENSE-2.0](http://www.apache.org/licenses/LICENSE-2.0)
+
+## Building
+
+Tested with Visual Studio 2015
+
+* Run src/generate_protos.bat
+* Open src/windows-gui-client.sln and build
