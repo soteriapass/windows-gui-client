@@ -24,7 +24,15 @@
 
             InitializeComponent();
 
-            PasswordBox.Password = _ViewModel.Model.Password;
+            if (string.IsNullOrEmpty(_ViewModel.Model.Password))
+            {
+                PasswordBox.Focus();
+            }
+            else
+            {
+                PasswordBox.Password = _ViewModel.Model.Password;
+                TwoFactorAuthToken.Focus();
+            }
         }
 
         #endregion

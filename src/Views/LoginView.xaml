@@ -35,7 +35,7 @@
         <PasswordBox x:Name="PasswordBox" Grid.Row="4" Grid.Column="4" PasswordChanged="PasswordBox_PasswordChanged" VerticalContentAlignment="Center" PreviewKeyUp="LoginView_PreviewKeyUp"/>
 
         <TextBlock Grid.Row="6" Grid.Column="1" Text="2FA Token:" Visibility="{Binding TwoFactorVisibility, Converter={StaticResource BoolConv}}" VerticalAlignment="Center"/>
-        <TextBox Grid.Row="6" Grid.Column="4" Text="{Binding TwoFactorAuthToken}" Visibility="{Binding TwoFactorVisibility, Converter={StaticResource BoolConv}}" VerticalContentAlignment="Center"  PreviewKeyUp="LoginView_PreviewKeyUp"/>
+        <TextBox x:Name="TwoFactorAuthToken" Grid.Row="6" Grid.Column="4" Text="{Binding TwoFactorAuthToken}" Visibility="{Binding TwoFactorVisibility, Converter={StaticResource BoolConv}}" VerticalContentAlignment="Center"  PreviewKeyUp="LoginView_PreviewKeyUp"/>
 
         <Grid Grid.Row="8" Grid.Column="4">
             <Grid.ColumnDefinitions>
