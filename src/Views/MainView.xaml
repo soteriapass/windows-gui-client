@@ -34,7 +34,7 @@
             <TextBox Grid.Column="1" Text="{Binding SearchText, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"/>
         </Grid>
 
-        <ListView Grid.Row="2" ItemsSource="{Binding Passwords}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SelectedIndex="{Binding SelectedPasswordIndex}">
+        <ListView Grid.Row="2" ItemsSource="{Binding Passwords}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SelectedIndex="{Binding SelectedPasswordIndex}" SelectionMode="Single">
             <ListView.Resources>
                 <local:StringToHiddenStringConverter x:Key="StringConverter"/>
                 <local:ExtraDataToImageConverter x:Key="ImageConverter"/>
