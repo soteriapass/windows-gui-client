@@ -1,4 +1,5 @@
-﻿using System;
+﻿using HtmlAgilityPack;
+using System;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -16,25 +17,18 @@ namespace PasswordManager
         {
             if(targetType == typeof(ImageSource))
             {
-                using (WebClient client = new WebClient())
+                BitmapImage returnVal = GetImage(value as string);
+                if(returnVal == null)
                 {
-                    try
+                    returnVal = GetImage(value as string, false);
+                    if(returnVal != null)
                     {
-                        string file = Path.Combine(Path.GetTempPath(), (value as string).Replace(':', '_').Replace('.', '_').Replace('/', '_'), "favicon.ico");
-                        if(!Directory.Exists(Path.GetDirectoryName(file)))
-                        {
-                            Directory.CreateDirectory(Path.GetDirectoryName(file));
-                        }
-                        if (!File.Exists(file))
-                        {
-                            client.DownloadFileAsync(new Uri(Path.Combine(value as string, "favicon.ico").Replace('\\', '/')), file);
-                        }
-                        return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute));
+                        return returnVal;
                     }
-                    catch
-                    {
-
-                    }
+                }
+                else
+                {
+                    return returnVal;
                 }
                 return new BitmapImage(new Uri("/PasswordManager;component/Resources/shield.ico", UriKind.RelativeOrAbsolute));
             }
@@ -44,6 +38,71 @@ namespace PasswordManager
         public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
         {
             throw new NotImplementedException();
+        }
+
+        private void DownloadFile(string value, string file, bool favIcon)
+        {
+            if (favIcon)
+            {
+                using (WebClient client = new WebClient())
+                {
+                    client.DownloadFile(Path.Combine(value, "favicon.ico").Replace('\\', '/'), file);
+                }
+            }
+            else
+            {
+                DownloadFileAlternative(value, file);
+            }
+        }
+
+        private void DownloadFileAlternative(string value, string file)
+        {
+            var web = new HtmlWeb();
+            var doc = web.Load(value);
+            foreach (var node in doc.DocumentNode.Descendants("link"))
+            {
+                var relValue = node.GetAttributeValue("rel", null);
+                if (relValue?.ToLower() == "shortcut icon")
+                {
+                    using (WebClient client = new WebClient())
+                    {
+                        client.DownloadFile(node.GetAttributeValue("href", null), file);
+                    }
+                }
+            }
+        }
+
+        private BitmapImage GetImage(string value, bool favIcon = true)
+        {
+            var uri = new Uri(value);
+            value = uri.Scheme + "://" + uri.Host;
+
+            string file = Path.Combine(Path.GetTempPath(), "soteriapass", value.Replace(':', '_').Replace('.', '_').Replace('/', '_'), "favicon.ico");
+            try
+            {
+                if (!Directory.Exists(Path.GetDirectoryName(file)))
+                {
+                    Directory.CreateDirectory(Path.GetDirectoryName(file));
+                }
+                if (!favIcon)
+                {
+                    file = Path.ChangeExtension(file, ".sec.ico");
+                    if (!File.Exists(file))
+                    {
+                        DownloadFile(value, file, favIcon);
+                    }
+                }
+                else if (!File.Exists(file))
+                {
+                    DownloadFile(value, file, favIcon);
+                }
+                return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute));
+            }
+            catch (Exception ex)
+            {
+                Console.Error.WriteLine(ex.Message);
+            }
+            return null;
         }
 
         #endregion
