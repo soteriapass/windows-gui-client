@@ -12,6 +12,7 @@ namespace PasswordManager
         private readonly LoginView _View;
         private readonly Conf _Model;
         private bool _TwoFactorVisibility;
+        private DelegateCommand _OKCommand;
 
         #endregion
 
@@ -22,6 +23,7 @@ namespace PasswordManager
             _View = view;
             _Model = App.Instance.Conf;
             _TwoFactorVisibility = twoFactor;
+            _OKCommand = new DelegateCommand(delegate { _View.DialogResult = true; _View.Close(); }, CanLogin);
         }
 
         #endregion
@@ -42,6 +44,7 @@ namespace PasswordManager
                 {
                     _Model.Username = value;
                     OnPropertyChanged();
+                    _OKCommand.OnCanExecuteChanged();
                 }
             }
         }
@@ -55,6 +58,7 @@ namespace PasswordManager
                 {
                     _Model.TwoFactorAuthToken = value;
                     OnPropertyChanged();
+                    _OKCommand.OnCanExecuteChanged();
                 }
             }
         }
@@ -74,7 +78,7 @@ namespace PasswordManager
 
         public ICommand OKCommand
         {
-            get { return new DelegateCommand(delegate { _View.DialogResult = true; _View.Close(); }); }
+            get { return _OKCommand; }
         }
 
         #endregion
@@ -84,6 +88,20 @@ namespace PasswordManager
         internal void OnPasswordChanged(string password)
         {
             _Model.Password = password;
+            _OKCommand.OnCanExecuteChanged();
+        }
+
+        internal void OnPreviewKeyUp(Key key)
+        {
+            if((key == Key.Enter || key == Key.Return) && _OKCommand.CanExecute(null))
+            {
+                _OKCommand.Execute(null);
+            }
+        }
+
+        private bool CanLogin()
+        {
+            return !string.IsNullOrEmpty(Username) && !string.IsNullOrEmpty(_Model.Password) && (!TwoFactorVisibility || !string.IsNullOrEmpty(TwoFactorAuthToken));
         }
 
         #endregion

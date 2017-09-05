@@ -34,5 +34,10 @@
             System.Windows.Controls.PasswordBox passwordBox = (System.Windows.Controls.PasswordBox)sender;
             _ViewModel.OnPasswordChanged(passwordBox.Password);
         }
+
+        private void LoginView_PreviewKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            _ViewModel.OnPreviewKeyUp(e.Key);
+        }
     }
 }
