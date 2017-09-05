@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Net;
@@ -28,7 +27,7 @@ namespace PasswordManager
                         }
                         if (!File.Exists(file))
                         {
-                            client.DownloadFile(Path.Combine(value as string, "favicon.ico").Replace('\\', '/'), file);
+                            client.DownloadFileAsync(new Uri(Path.Combine(value as string, "favicon.ico").Replace('\\', '/')), file);
                         }
                         return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute));
                     }
