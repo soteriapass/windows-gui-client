@@ -10,6 +10,7 @@ using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.Security.Cryptography;
+using PasswordManager.ObjectModel;
 
 namespace PasswordManager
 {
@@ -25,8 +26,8 @@ namespace PasswordManager
         private Pswmgr.PasswordManager.PasswordManagerClient _Client;
         private string _Token;
 
-        private readonly ObservableCollection<Pswmgr.PasswordEntry> _Passwords;
-        private readonly ObservableCollection<Pswmgr.PasswordEntry> _PasswordsRaw;
+        private readonly ObservableCollection<PasswordWrapper> _Passwords;
+        private readonly ObservableCollection<PasswordWrapper> _PasswordsRaw;
 
         private int _SelectedPasswordIndex;
         private string _SearchText;
@@ -45,8 +46,8 @@ namespace PasswordManager
 
             _ConnectedStatus = "Disconnected";
 
-            _Passwords = new ObservableCollection<Pswmgr.PasswordEntry>();
-            _PasswordsRaw = new ObservableCollection<Pswmgr.PasswordEntry>();
+            _Passwords = new ObservableCollection<PasswordWrapper>();
+            _PasswordsRaw = new ObservableCollection<PasswordWrapper>();
 
             _SelectedPasswordIndex = -1;
             _BusyScope = new BusyScope(() => IsBusy = true, ()=> IsBusy = false);
@@ -154,7 +155,7 @@ namespace PasswordManager
             }
         }
 
-        public ObservableCollection<Pswmgr.PasswordEntry> Passwords
+        public ObservableCollection<PasswordWrapper> Passwords
         {
             get { return _Passwords; }
         }
@@ -299,7 +300,7 @@ namespace PasswordManager
                 _Passwords.Clear();
                 foreach (var password in response.Passwords)
                 {
-                    _PasswordsRaw.Add(password);
+                    _PasswordsRaw.Add(new PasswordWrapper(password));
                     _Passwords.Clear(); 
                 }
                 Search(_SearchText);
@@ -321,8 +322,8 @@ namespace PasswordManager
                 return;
             }
 
-            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
-            await _Client.DeletePasswordAsync(entry);
+            PasswordWrapper entry = _Passwords[_SelectedPasswordIndex];
+            await _Client.DeletePasswordAsync(entry.WrappedItem);
             _Passwords.RemoveAt(_SelectedPasswordIndex);
         }
 
@@ -334,15 +335,15 @@ namespace PasswordManager
                 return;
             }
 
-            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+            PasswordWrapper entry = _Passwords[_SelectedPasswordIndex];
 
-            NewPasswordView passwordView = new NewPasswordView(entry)
+            NewPasswordView passwordView = new NewPasswordView(entry.WrappedItem)
             {
                 Owner = _View
             };
             if (passwordView.ShowDialog() == true)
             {
-                var response = await _Client.ModifyPasswordAsync(entry);
+                var response = await _Client.ModifyPasswordAsync(entry.WrappedItem);
                 if (response.Success)
                     MessageBox.Show(_View, "Modified password successfully", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
                 else
@@ -362,7 +363,7 @@ namespace PasswordManager
                 return;
             }
 
-            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+            PasswordWrapper entry = _Passwords[_SelectedPasswordIndex];
 
             System.Windows.Clipboard.SetText(entry.Password);
         }
@@ -375,7 +376,7 @@ namespace PasswordManager
                 return;
             }
 
-            Pswmgr.PasswordEntry entry = _Passwords[_SelectedPasswordIndex];
+            PasswordWrapper entry = _Passwords[_SelectedPasswordIndex];
         }
 
         private void Search(string searchTerm)

@@ -4,6 +4,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:PasswordManager"
         xmlns:pswmgr="clr-namespace:Pswmgr"
+        xmlns:pswmgrObjectModel="clr-namespace:PasswordManager.ObjectModel"
         Title="Password Manager" Height="350" Width="525" Icon="/PasswordManager;component/Resources/shield.ico" WindowStartupLocation="CenterScreen">
     <Grid>
         <Grid.RowDefinitions>
@@ -37,7 +38,6 @@
         <ListView Grid.Row="2" ItemsSource="{Binding Passwords}" HorizontalContentAlignment="Stretch" VerticalContentAlignment="Stretch" SelectedIndex="{Binding SelectedPasswordIndex}" SelectionMode="Single">
             <ListView.Resources>
                 <local:StringToHiddenStringConverter x:Key="StringConverter"/>
-                <local:ExtraDataToImageConverter x:Key="ImageConverter"/>
                 <ContextMenu x:Key="ItemContextMenu">
                     <MenuItem Header="Copy Password" Command="{Binding Path=DataContext.Copy, RelativeSource={RelativeSource Mode=FindAncestor, AncestorType=ListView}}"/>
                     <Separator/>
@@ -52,7 +52,7 @@
                 </ContextMenu>
             </ListView.Resources>
             <ListView.ItemTemplate>
-                <DataTemplate DataType="pswmgr:PasswordEntry">
+                <DataTemplate DataType="pswmgrObjectModel:PasswordWrapper">
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="Auto"/>
@@ -67,7 +67,7 @@
                                 <ColumnDefinition Width="32"/>
                                 <ColumnDefinition Width="10"/>
                             </Grid.ColumnDefinitions>
-                            <Image Grid.Column="1" Source="{Binding Extra, Converter={StaticResource ImageConverter}}"/>
+                            <Image Grid.Column="1" Source="{Binding Icon}"/>
                         </Grid>
                         <Grid Grid.Column="1" VerticalAlignment="Center">
                             <Grid.ColumnDefinitions>
