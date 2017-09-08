@@ -85,6 +85,7 @@ namespace PasswordManager.ObjectModel
             }
             if(!_SearchedForImage)
             {
+                _SearchedForImage = true;
                 Task.Run(delegate
                 {
                     DownloadFile(Extra, file);
@@ -109,14 +110,18 @@ namespace PasswordManager.ObjectModel
         {
             using (WebClient client = new WebClient())
             {
-                client.DownloadFile(Path.Combine(value, "favicon.ico").Replace('\\', '/'), file);
+                ExceptionUtilities.TryCatchIgnore(() => client.DownloadFile(Path.Combine(value, "favicon.ico").Replace('\\', '/'), file));
             }
         }
 
         private void DownloadFileAlternative(string value, string file)
         {
-            var web = new HtmlWeb();
-            var doc = web.Load(value);
+            HtmlWeb web = new HtmlWeb();
+            HtmlDocument doc = ExceptionUtilities.TryAssignCatchIgnore(delegate { return web.Load(value); }, null) ;
+
+            if (doc == null)
+                return;
+
             foreach (var node in doc.DocumentNode.Descendants("link"))
             {
                 var relValue = node.GetAttributeValue("rel", null);
@@ -124,7 +129,17 @@ namespace PasswordManager.ObjectModel
                 {
                     using (WebClient client = new WebClient())
                     {
-                        client.DownloadFile(node.GetAttributeValue("href", null), file);
+                        ExceptionUtilities.TryCatchIgnore(() => client.DownloadFile(node.GetAttributeValue("href", null), file));
+                    }
+                    continue;
+                }
+
+                var typeValue = node.GetAttributeValue("image/x-icon", null);
+                if(typeValue != null)
+                {
+                    using (WebClient client = new WebClient())
+                    {
+                        ExceptionUtilities.TryCatchIgnore(() => client.DownloadFile(node.GetAttributeValue("type", null), file));
                     }
                 }
             }
