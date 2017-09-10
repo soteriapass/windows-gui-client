@@ -41,6 +41,11 @@
             _ViewModel.OnPasswordBoxPasswordChanged();
         }
 
+        private void LoginView_PreviewKeyUp(object sender, System.Windows.Input.KeyEventArgs e)
+        {
+            _ViewModel.OnPreviewKeyUp(e.Key);
+        }
+
         #endregion
     }
 }

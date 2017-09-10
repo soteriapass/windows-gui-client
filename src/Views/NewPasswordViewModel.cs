@@ -118,6 +118,14 @@ namespace PasswordManager
             _View.Close();
         }
 
+        internal void OnPreviewKeyUp(Key key)
+        {
+            if ((key == Key.Enter || key == Key.Return) && _OKCommand.CanExecute(null))
+            {
+                _OKCommand.Execute(null);
+            }
+        }
+
         #endregion
 
         #region Events

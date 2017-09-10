@@ -37,6 +37,8 @@
 
         #endregion
 
+        #region Methods
+
         private void PasswordBox_PasswordChanged(object sender, System.Windows.RoutedEventArgs e)
         {
             System.Windows.Controls.PasswordBox passwordBox = (System.Windows.Controls.PasswordBox)sender;
@@ -47,5 +49,7 @@
         {
             _ViewModel.OnPreviewKeyUp(e.Key);
         }
+
+        #endregion
     }
 }
