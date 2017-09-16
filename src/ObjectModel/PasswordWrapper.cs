@@ -71,37 +71,41 @@ namespace PasswordManager.ObjectModel
 
         private BitmapImage GetIcon()
         {
-            string file = Path.Combine(Path.GetTempPath(), "soteriapass", Extra.Replace(':', '_').Replace('.', '_').Replace('/', '_'), "favicon.ico");
-            string fileAlt = Path.ChangeExtension(file, ".sec.ico");
-            if(File.Exists(file))
+            if (!_SearchedForImage)
             {
-                BitmapImage returnValue = ExceptionUtilities.TryAssignCatchIgnore(delegate { return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute)); }, null);
-                if (returnValue != null)
-                    return returnValue;
-            }
-            if(File.Exists(fileAlt))
-            {
-
-            }
-            if(!_SearchedForImage)
-            {
-                _SearchedForImage = true;
-                Task.Run(delegate
+                string file = Path.Combine(Path.GetTempPath(), "soteriapass", Extra.Replace(':', '_').Replace('.', '_').Replace('/', '_'), "favicon.ico");
+                string fileAlt = Path.ChangeExtension(file, ".sec.ico");
+                Directory.CreateDirectory(Directory.GetParent(file).FullName);
+                if (File.Exists(file))
                 {
-                    DownloadFile(Extra, file);
-                    if (ExceptionUtilities.TryAssignCatchIgnore(delegate { return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute)); }, null) != null)
-                    {
-                        OnPropertyChanged(nameof(Icon));
-                        return;
-                    }
+                    BitmapImage returnValue = ExceptionUtilities.TryAssignCatchIgnore(delegate { return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute)); }, null);
+                    if (returnValue != null)
+                        return returnValue;
+                }
+                if (File.Exists(fileAlt))
+                {
 
-                    DownloadFileAlternative(Extra, fileAlt);
-                    if (ExceptionUtilities.TryAssignCatchIgnore(delegate { return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute)); }, null) != null)
+                }
+                if (!_SearchedForImage)
+                {
+                    _SearchedForImage = true;
+                    Task.Run(delegate
                     {
-                        OnPropertyChanged(nameof(Icon));
-                        return;
-                    }
-                });
+                        DownloadFile(Extra, file);
+                        if (ExceptionUtilities.TryAssignCatchIgnore(delegate { return new BitmapImage(new Uri(file, UriKind.RelativeOrAbsolute)); }, null) != null)
+                        {
+                            OnPropertyChanged(nameof(Icon));
+                            return;
+                        }
+
+                        DownloadFileAlternative(Extra, fileAlt);
+                        if (ExceptionUtilities.TryAssignCatchIgnore(delegate { return new BitmapImage(new Uri(fileAlt, UriKind.RelativeOrAbsolute)); }, null) != null)
+                        {
+                            OnPropertyChanged(nameof(Icon));
+                            return;
+                        }
+                    });
+                }
             }
             return new BitmapImage(new Uri("/PasswordManager;component/Resources/shield.ico", UriKind.RelativeOrAbsolute));
         }
